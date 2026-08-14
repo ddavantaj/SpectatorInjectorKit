@@ -1,5 +1,5 @@
 ================================================================================
-   UNITY SPECTATOR CAMERA & 3D VIRTUAL STUDIO SUITE (v2.9.0)
+   UNITY SPECTATOR CAMERA & 3D VIRTUAL STUDIO SUITE (v3.0.0)
    INSTRUCTION MANUAL / MANUAL DE INSTRUCTIUNI / ИНСТРУКЦИЯ ПО ЭКСПЛУАТАЦИИ
 ================================================================================
 
@@ -24,236 +24,104 @@ LANGUAGES INCLUDED / LIMBI INCLUSE / ВКЛЮЧЕННЫЕ ЯЗЫКИ:
 --------------------------------------------------------------------------------
 - F1             : Toggle Spectator UI on / off
 - F9             : Capture Screenshot (Alpha PNG / 8x MSAA)
-- F10            : Toggle Screen Recording (High Quality 60 FPS MP4, 1:1 Real-Time)
+- F10            : Toggle Screen Recording (Zero-Lag 60 FPS MP4, 1:1 Real-Time)
 - W / A / S / D  : Move Camera Forward / Left / Backward / Right in World Space
 - E / Space      : Fly Upwards in World Space
 - Q / Left Ctrl  : Fly Downwards in World Space
-- Left Shift     : Hold for Fast Speed Boost (3.5x)
+- Left Shift     : Hold for Fast Speed Boost (Turbo)
 - Right-Click    : Hold & Drag mouse to Look Around / Orbit (Pitch & Yaw)
 
-[ 1.3 REAL-TIME VR HEADSET TRACKING & CAMERA MODES ]
+[ 1.3 CATEGORIZED ACCORDION CONTROL PANEL ]
 --------------------------------------------------------------------------------
-- [ X ] Follow Main Camera : 1:1 Real-Time tracking of the player's VR Headset
-                             (First-Person perspective view).
-- Lock World Position      : Unchecking follow or pressing WASD / Mouse Drag instantly
-                             anchors the spectator camera at fixed 3D world coordinates.
+The control panel is organized into 7 collapsible sections with live badges:
+1. 🎥 1. Video Setup & Stabilization : Resolution (1080p/720p/Native), FPS (60/30),
+                                        Hardware NVENC mode, Steadicam Gimbal damping.
+2. 👤 2. VR Tracking & Free-Flight   : Follow VR Headset (1st Person) vs Locked World.
+3. 🎥 3. Camera Position, Rotation & FOV : Axis step buttons (±0.03, ±0.1, ±1), FOV presets.
+4. 💾 4. Camera Presets              : 4 quick save/load slots for camera coordinates only.
+5. 🧱 5. 3D Scene Objects & Cyclorama: Curved Backdrop, 360° Dome, Flat Wall, HDR loader.
+6. 🎨 6. Skybox & Background Fill    : Disable Skybox, Chroma Green/Blue, Alpha PNG cutout.
+7. 💻 7. Proxima Inspector & Cheats  : Interactive terminal & 1-click level/coin controls.
 
-[ 1.4 3D PHYSICAL IN-GAME OBJECTS & CYCLORAMA (TRUE 3D PARALLAX) ]
+[ 1.4 HIGH-PERFORMANCE ZERO-LAG VIDEO & STABILIZATION ]
 --------------------------------------------------------------------------------
-The background is an actual 3D physical object anchored in the game scene,
-providing true 3D perspective and depth parallax when the camera orbits:
-- [ 🖼️ Curved Backdrop ] : 3D Curved Studio Set (Cyclorama).
-  * Bend Sides (Wrap X)  : Curve sides horizontally (0° Flat -> 110° Studio Cyc -> 240° Wrap).
-  * Bend Top/Bottom (Y)  : Curve top & bottom vertically (0° Flat -> 120° Bowl/Dome).
-- [ 🌐 360° Sphere Dome ]: Inverted 360° sphere for HDR / panoramic environments.
-- [ 🔲 Flat Wall ]       : Classic 3D flat studio wall / poster.
-- Native C# Radiance HDR : Binary .hdr (RGBE) loader with Reinhard tonemapping.
-                           Also supports PNG, JPG, and BMP formats.
-- Manual Numeric Inputs  : Directly type exact dimensions for Width (Scale X),
-                           Height (Scale Y), and Depth / Radius (Scale Z).
-- [ 🎯 Place Behind View]: Snaps the 3D shape 8m in front of current camera view
-                           and keeps it fixed in 3D world space.
-- Brightness / Light     : Adjust light exposure from 0.05x to 5.0x.
-
-[ 1.5 SCREENSHOTS & 1:1 REAL-TIME MP4 VIDEO RECORDING ]
---------------------------------------------------------------------------------
-- F9 Screenshot (PNG)   : 8x MSAA edge anti-aliasing. Supports full transparent
-                          cutouts (Disable Skybox + Alpha 0).
-- F10 Video Recording   : Captures the exact Windows monitor backbuffer with all
-                          shaders, post-processing, and UI.
-- 1:1 Real-Time Sync    : Exact elapsed time synchronization guarantees 1s game = 1s video,
-                          completely eliminating fast-forward issues on VR headsets.
-- Asynchronous Engine   : Multi-threaded background streaming to FFmpeg with GPU
-                          NVENC H.264 acceleration (CPU libx264 fallback).
-
-[ 1.6 CAMERA-ONLY PRESETS (P1 - P4) ]
---------------------------------------------------------------------------------
-- Save Cam P1 - P4 / Load Cam P1 - P4:
-  * Saves only Camera Transform (Position, Rotation, FOV, Move Speed, World Lock).
-  * Does NOT reset or alter your 3D backdrop, HDRI image, or curvature settings.
-
-[ 1.7 FULL PERSISTENCE ACROSS GAME RESTARTS (SpectatorSettings.ini) ]
---------------------------------------------------------------------------------
-- All settings automatically save every 5s, on exit, or via [ 💾 Save Now ].
-- Upon reopening the game, EVERYTHING is automatically restored:
-  * Camera position, rotation, FOV, and speed.
-  * Active 3D shape image/HDRI file and position.
-  * Width, Height, Depth scale, and Curvature Angles (Bend Sides & Top/Bottom).
-  * Saved Camera Presets 1-4.
-  * Proxima quick inputs (Level, Coins, Lives, Stars).
-
-[ 1.8 PROXIMA DEBUG TERMINAL & IN-GAME CHEATS ]
---------------------------------------------------------------------------------
-- One-click buttons for: Set Level, Load Level, Load Menu, Set Coins, Set Lives,
-  Set Stars, Win Level, Lose Level, Recenter Area, Reset Tutorials, Clear Save.
-- Custom Terminal: Execute any internal game/Proxima method directly.
-
+- Zero-GC Buffer Pool  : Pre-allocated frame recycling with 0 MB/s allocation.
+- Steadicam Damping    : Smooth positional and spherical rotational interpolation.
+                         Presets: Subtle (12.0), Cinematic (6.0), Heavy (2.5).
+- 1:1 Real-Time Sync   : Eliminates fast-forward / time-skew effects on VR displays.
 
 ================================================================================
-   2. ROMANIAN / ROMANA (RO) - MANUAL DE UTILIZARE
+   2. ROMÂNĂ (RO) - GHID DE UTILIZARE ȘI INSTRUCȚIUNI
 ================================================================================
 
-[ 2.1 INSTALARE RAPIDA (INJECTOR CU 1-CLICK) ]
+[ 2.1 INSTALARE RAPIDĂ (INJECTOR STANDALONE CU 1-CLICK) ]
 --------------------------------------------------------------------------------
-1. Deschideti folderul SpectatorInjectorKit.
-2. Dati dublu-click pe "Inject.bat" (sau "InjectSpectatorCamera.exe").
-3. Selectati folderul jocului cand vi se cere (unde se afla fisierul .exe al jocului).
-4. Injectorul copiaza automat "SpectatorPlugin.dll" si include "ffmpeg.exe".
-5. Porniti jocul. Meniul Spectator va aparea automat pe ecran.
+1. Deschideți folderul SpectatorInjectorKit.
+2. Rulați "Inject.bat" (sau "InjectSpectatorCamera.exe").
+3. Selectați folderul cu build-ul jocului (unde se află fișierul .exe al jocului).
+4. Injectorul va insera automat "SpectatorPlugin.dll" și "ffmpeg.exe".
+5. Porniți jocul. Panoul de control Spectator va apărea direct pe ecran.
 
-[ 2.2 TASTE RAPIDE & CONTROALE ]
+[ 2.2 SCURTĂTURI DE TASTATURĂ ]
 --------------------------------------------------------------------------------
-- F1             : Afiseaza / Ascunde Panoul Spectator
-- F9             : Face Screenshot (Alpha PNG / 8x MSAA)
-- F10            : Porneste / Opreste Inregistrarea Video MP4 (60 FPS, Viteza Reala 1:1)
-- W / A / S / D  : Deplasare Inainte / Stanga / Inapoi / Dreapta in Spatiul 3D
-- E / Space      : Ridicare pe verticala in sus
-- Q / Left Ctrl  : Coborare pe verticala in jos
-- Left Shift     : Tineti apasat pentru Viteza Rapida (Boost 3.5x)
-- Click Dreapta  : Tineti apasat si miscati mouse-ul pentru Rotire Camera (Privire 3D)
+- F1             : Ascunde / Afișează panoul de control
+- F9             : Screenshot PNG ultra-clar (cu suport pentru fundal transparent)
+- F10            : Pornește / Oprește înregistrarea video MP4 la 60 FPS (Fără Lag)
+- W / A / S / D  : Zbor Cameră: Înainte / Stânga / Înapoi / Dreapta
+- E / Space      : Ridicare pe verticală
+- Q / Left Ctrl  : Coborâre pe verticală
+- Shift Stânga   : Viteză mărită de deplasare (Turbo)
+- Click Dreapta  : Țineți apăsat și mișcați mouse-ul pentru rotire privire
 
-[ 2.3 URMARIRE IN TIMP REAL A CASTII VR & MODURI CAMERA ]
+[ 2.3 PANOU DE CONTROL STRUCTURAT PE SECȚIUNI ]
 --------------------------------------------------------------------------------
-- [ X ] Follow Main Camera : Urmarire 1:1 in timp real a castii VR (vedere First-Person).
-- Lock World Position      : Debifarea urmaririi sau apasarea WASD / Mouse blocheaza
-                             camera la coordonate 3D fixe in lume pentru zbor liber.
+Panoul conține 7 secțiuni pliabile pentru o utilizare clară și aerisită:
+1. 🎥 1. Video Setup & Stabilization : Rezoluții (1080p, 720p, Native), 60/30 FPS,
+                                        mod Zero-Lag NVENC și stabilizare Steadicam.
+2. 👤 2. VR Tracking & Free-Flight   : Urmărire cască VR (Persoana 1) vs Zbor Liber.
+3. 🎥 3. Camera Position, Rotation & FOV : Poziție fină X/Y/Z, Rotație, Unghi FOV.
+4. 💾 4. Camera Presets              : 4 preseturi independente pentru poziția camerei.
+5. 🧱 5. 3D Scene Objects & Cyclorama: Fundal Curbat 3D, Dom 360°, Încărcare fișiere HDR.
+6. 🎨 6. Skybox & Background Fill    : Oprire Skybox, Fundal Solid Chroma Green/Blue/Alpha.
+7. 💻 7. Proxima Inspector & Cheats  : Consolă comenzi, Setare Nivel, Bani, Vieți, Stele.
 
-[ 2.4 FORME 3D IN SCENA & STUDIO CURBAT CYCLORAMA (PARALLAX 3D REAL) ]
+[ 2.4 ÎNREGISTRARE VIDEO ZERO-LAG & STABILIZARE STEADICAM ]
 --------------------------------------------------------------------------------
-Fundalul este un obiect 3D fizic real plasat in lumea jocului, creand adancime
-si efect autentic de Parallax 3D cand rotiti camera in jurul scenei:
-- [ 🖼️ Curved Backdrop ] : Perete 3D Curbat de Studio (Cyclorama).
-  * Bend Sides (Wrap X)  : Curbeaza lateralele (0° Plat -> 110° Studio -> 240° Imbracare).
-  * Bend Top/Bottom (Y)  : Curbeaza sus si jos (0° Plat -> 120° Cupola/Bol 3D).
-- [ 🌐 360° Sphere Dome ]: Sfera 3D inversata pentru medii panoramice HDRI 360°.
-- [ 🔲 Flat Wall ]       : Panou 3D plat clasic pentru afise / perete de studio.
-- Parser Nativ Radiance  : Citire directa binara pentru fisiere .hdr (RGBE) cu Reinhard
-                           tonemapping. Suporta de asemenea PNG, JPG si BMP.
-- Campuri Numerice Manual: Puteti tasta direct cifre exacte pentru Latime (Scale X),
-                           Inaltime (Scale Y) si Adancime / Raza (Scale Z).
-- [ 🎯 Place Behind View]: Pozitioneaza instant forma 3D la 8m in fata vederii
-                           curente si o lasa fixata in coordonatele 3D ale lumii.
-- Luminozitate (Light)   : Reglare expunere si intensitate de la 0.05x la 5.0x.
-
-[ 2.5 SCREENSHOTS & INREGISTRARE VIDEO MP4 1:1 IN TIMP REAL ]
---------------------------------------------------------------------------------
-- Screenshot F9 (PNG)   : Netezire margini cu 8x MSAA. Suporta decupare transparenta
-                          (Disable Skybox + Alpha 0).
-- Inregistrare F10 (MP4): Captureaza ecranul exact din Windows cu toate shaderele,
-                          efectele de post-procesare si interfata jocului.
-- Sincronizare 1:1 Reala: Sincronizare exacta cu timpul real (1s joc = 1s video),
-                          eliminand accelerarea video de pe castile VR.
-- Motor Asincron        : Transmisie asincrona spre FFmpeg cu accelerare hardware GPU
-                          NVENC H.264 (cu fallback automat pe procesor libx264).
-
-[ 2.6 PRESETURI DOAR PENTRU CAMERA (P1 - P4) ]
---------------------------------------------------------------------------------
-- Save Cam P1 - P4 / Load Cam P1 - P4:
-  * Salveaza si incarca strict parametrii Camerei (Pozitie, Rotatie, FOV, Viteza).
-  * NU reseteaza si NU modifica fundalul 3D, imaginea HDRI sau curbura aleasa.
-
-[ 2.7 SALVARE PERSISTENTA TOTALA (SpectatorSettings.ini) ]
---------------------------------------------------------------------------------
-- Toate setarile se salveaza automat la fiecare 5 secunde, la inchiderea jocului
-  sau prin butonul [ 💾 Save Now ].
-- La redeschiderea jocului, TOTUL se restaureaza automat exact cum a ramas:
-  * Pozitia, rotatia, FOV-ul si viteza camerei.
-  * Imaginea 3D / HDRI incarcata si pozitia ei in spatiu.
-  * Dimensiunile (Width/Height/Depth) si unghiurile de curbare (Bend Sides & Top/Bottom).
-  * Preset-urile de camera 1-4.
-  * Valorile tastate in Proxima (Nivel, Bani, Vieti, Stele).
-
-[ 2.8 CONSOLA PROXIMA & TRISURI IN JOC ]
---------------------------------------------------------------------------------
-- Butoane rapide: Set Level, Load Level, Load Menu, Set Coins, Set Lives,
-  Set Stars, Win Level, Lose Level, Recenter Area, Reset Tutorials, Clear Save.
-- Consola Text: Rulati orice comanda sau metoda interna direct din joc.
-
+- Zero-GC Engine       : Reutilizare automată de buffere de memorie (0 MB alocare GC).
+- Stabilizare Gimbal   : Mișcare cinematică fluidă prin interpolare sferică continuă.
+- Sincronizare 1:1     : Timpul din video corespunde milisecundă cu milisecundă cu jocul.
 
 ================================================================================
-   3. RUSSIAN / РУССКИЙ (RU) - РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
+   3. РУССКИЙ (RU) - РУКОВОДСТВО ПОЛЬЗОВАТЕЛЯ
 ================================================================================
 
-[ 3.1 БЫСТРАЯ УСТАНОВКА (ИНЖЕКТОР В 1 КЛИК) ]
+[ 3.1 БЫСТРАЯ УСТАНОВКА (1-CLICK ИНЖЕКТОР) ]
 --------------------------------------------------------------------------------
 1. Откройте папку SpectatorInjectorKit.
-2. Запустите файл "Inject.bat" (или "InjectSpectatorCamera.exe").
-3. При запросе укажите папку с собранной игрой (где находится исполняемый файл .exe).
-4. Инжектор автоматически установит "SpectatorPlugin.dll" и подключит "ffmpeg.exe".
-5. Запустите игру. Панель камеры появится автоматически.
+2. Запустите "Inject.bat" (или "InjectSpectatorCamera.exe").
+3. Укажите папку с установленной игрой (где находится .exe файл).
+4. Инжектор автоматически установит "SpectatorPlugin.dll" и "ffmpeg.exe".
+5. Запустите игру. Панель управления Spectator появится на экране.
 
-[ 3.2 ГОРЯЧИЕ КЛАВИШИ И УПРАВЛЕНИЕ ]
+[ 3.2 ГОРЯЧИЕ КЛАВИШИ ]
 --------------------------------------------------------------------------------
-- F1             : Показать / скрыть панель управления Spectator
-- F9             : Сделать скриншот (Alpha PNG / 8x MSAA)
-- F10            : Начать / остановить запись видео MP4 (60 FPS, реальное время 1:1)
-- W / A / S / D  : Движение Вперед / Влево / Назад / Вправо в 3D пространстве
-- E / Space      : Подняться вверх в 3D мире
-- Q / Left Ctrl  : Опуститься вниз в 3D мире
-- Left Shift     : Зажать для ускорения движения (Boost 3.5x)
-- Правая кнопка  : Зажать и двигать мышь для вращения камеры (обзор 3D)
+- F1             : Скрыть / Показать панель управления
+- F9             : Сделать скриншот PNG (с поддержкой прозрачности Alpha)
+- F10            : Старт / Стоп записи видео MP4 60 FPS (Без лагов)
+- W / A / S / D  : Перемещение камеры в 3D пространстве
+- E / Пробел     : Подняться вверх
+- Q / Left Ctrl  : Опуститься вниз
+- Left Shift     : Ускорение полета (Турбо)
+- Правая кнопка  : Удерживайте для вращения и обзора мышью
 
-[ 3.3 ОТСЛЕЖИВАНИЕ VR ШЛЕМА В РЕАЛЬНОМ ВРЕМЕНИ ]
+[ 3.3 КАТЕГОРИЗИРОВАННАЯ ПАНЕЛЬ УПРАВЛЕНИЯ ]
 --------------------------------------------------------------------------------
-- [ X ] Follow Main Camera : Точное 1:1 отслеживание шлема VR игрока (вид от 1 лица).
-- Lock World Position      : Снятие галочки или нажатие WASD / Mouse блокирует камеру
-                             в фиксированных 3D координатах мира для свободного полета.
-
-[ 3.4 ФИЗИЧЕСКИЕ 3D ОБЪЕКТЫ В СЦЕНЕ И ИЗОГНУТЫЙ ФОН (НАСТОЯЩИЙ 3D PARALLAX) ]
---------------------------------------------------------------------------------
-Фон является реальным 3D объектом в игровом пространстве, создавая настоящую
-глубину и эффект параллакса при перемещении камеры вокруг игровой сцены:
-- [ 🖼️ Curved Backdrop ] : Изогнутый 3D студийный фон (Циклорама).
-  * Bend Sides (Wrap X)  : Изгиб по бокам (0° плоский -> 110° студия -> 240° полусфера).
-  * Bend Top/Bottom (Y)  : Изгиб сверху и снизу (0° плоский -> 120° купол/чаша).
-- [ 🌐 360° Sphere Dome ]: 3D сфера с инвертированной сеткой для 360° HDRI панорам.
-- [ 🔲 Flat Wall ]       : Классическая плоская 3D стена / постер.
-- Встроенный HDR парсер  : Чтение .hdr (RGBE) с тономаппингом Reinhard.
-                           Также поддерживаются форматы PNG, JPG и BMP.
-- Ручной ввод чисел      : Прямой ввод точных значений для Ширины (Scale X),
-                           Высоты (Scale Y) и Глубины / Радиуса (Scale Z).
-- [ 🎯 Place Behind View]: Мгновенно размещает 3D форму в 8 метрах перед камерой
-                           и фиксирует её в мировых 3D координатах.
-- Яркость (Light)        : Регулировка яркости и экспозиции от 0.05x до 5.0x.
-
-[ 3.5 СКРИНШОТЫ И ЗАПИСЬ ВИДЕО MP4 1:1 В РЕАЛЬНОМ ВРЕМЕНИ ]
---------------------------------------------------------------------------------
-- Скриншот F9 (PNG)     : Сглаживание 8x MSAA. Поддерживает прозрачный фон
-                          (Disable Skybox + Alpha 0).
-- Видеозапись F10 (MP4) : Захват финального кадра экрана Windows со всеми шейдерами,
-                          пост-обработкой и интерфейсом.
-- Синхронизация 1:1     : Точный расчет времени гарантирует, что 1 сек игры = 1 сек видео
-                          (устраняет проблему ускоренного воспроизведения в VR).
-- Асинхронный движок    : Фоновый поток отправляет кадры в FFmpeg с GPU аппаратным
-                          ускорением NVENC H.264 (с переходом на CPU libx264).
-
-[ 3.6 ПРЕСЕТЫ ТОЛЬКО ДЛЯ КАМЕРЫ (P1 - P4) ]
---------------------------------------------------------------------------------
-- Save Cam P1 - P4 / Load Cam P1 - P4:
-  * Сохраняет и загружает исключительно положение камеры (Pos, Rot, FOV, Speed).
-  * НЕ сбрасывает и НЕ перезаписывает загруженный 3D фон, HDRI и настройки изгиба.
-
-[ 3.7 ПОЛНОЕ СОХРАНЕНИЕ ВСЕХ НАСТРОЕК (SpectatorSettings.ini) ]
---------------------------------------------------------------------------------
-- Автосохранение каждые 5 секунд, при выходе из игры или по кнопке [ 💾 Save Now ].
-- При повторном запуске игры ПОЛНОСТЬЮ восстанавливается рабочее состояние:
-  * Позиция, вращение, FOV и скорость камеры.
-  * Активный файл изображения/HDRI и его положение в пространстве.
-  * Размеры (Width/Height/Depth) и углы изгиба (Bend Sides & Top/Bottom).
-  * Сохраненные пресеты камеры 1-4.
-  * Значения в терминале Proxima (Уровень, Монеты, Жизни, Звезды).
-
-[ 3.8 ТЕРМИНАЛ PROXIMA И ЧИТЫ В ИГРЕ ]
---------------------------------------------------------------------------------
-- Быстрые кнопки: Set Level, Load Level, Load Menu, Set Coins, Set Lives,
-  Set Stars, Win Level, Lose Level, Recenter Area, Reset Tutorials, Clear Save.
-- Текстовая консоль: Запуск любых внутренних команд и методов Proxima.
-
-================================================================================
-   CAPTURES & SETTINGS STORAGE / SALVARE CAPTURI SI SETARI / СОХРАНЕНИЕ ФАЙЛОВ
-================================================================================
-- Screenshots  : Captures\Screenshots\
-- Videos (MP4) : Captures\Videos\
-- Custom Images: Captures\CustomSkyboxes\
-- Settings INI : Captures\SpectatorSettings.ini
+Панель разделена на 7 аккуратных сворачиваемых блоков:
+1. 🎥 1. Video Setup & Stabilization : Настройки 1080p/720p, 60 FPS, NVENC и Steadicam.
+2. 👤 2. VR Tracking & Free-Flight   : Слежение за VR шлемом (1-е лицо) / Свободный полет.
+3. 🎥 3. Camera Position, Rotation & FOV : Координаты X/Y/Z, Угол обзора FOV.
+4. 💾 4. Camera Presets              : 4 слота быстрых пресетов камеры.
+5. 🧱 5. 3D Scene Objects & Cyclorama: 3D изогнутый фон, купол 360°, загрузка HDR файлов.
+6. 🎨 6. Skybox & Background Fill    : Отключение скайбокса, Хромакей Green/Blue/Alpha.
+7. 💻 7. Proxima Inspector & Cheats  : Консоль читов, Выбор уровня, Монеты, Жизни, Звезды.
 ================================================================================

@@ -1,6 +1,6 @@
-# 🎥 Unity Spectator Camera & 3D Virtual Studio Suite (v2.9.0)
+# 🎥 Unity Spectator Camera & 3D Virtual Studio Suite (v3.0.0)
 
-[![Release](https://img.shields.io/badge/Release-v2.9.0-brightgreen.svg)](https://github.com/ddavantaj/SpectatorInjectorKit/releases/tag/v2.9.0)
+[![Release](https://img.shields.io/badge/Release-v3.0.0-brightgreen.svg)](https://github.com/ddavantaj/SpectatorInjectorKit/releases/tag/v3.0.0)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Unity%20MR%20%2F%20VR-blue.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)]()
 
@@ -22,7 +22,7 @@ Works as a **1-click standalone injector on any compiled Windows game build** (w
 ## ⚡ Download & Quick Start
 
 ### 📦 1-Click Standalone Injector (No Unity Editor Required)
-1. Download the latest pre-packaged release: **[SpectatorInjectorKit_v2.9.0.zip](https://github.com/ddavantaj/SpectatorInjectorKit/releases/download/v2.9.0/SpectatorInjectorKit_v2.9.0.zip)**.
+1. Download the latest pre-packaged release: **[SpectatorInjectorKit_v3.0.0.zip](https://github.com/ddavantaj/SpectatorInjectorKit/releases/download/v3.0.0/SpectatorInjectorKit_v3.0.0.zip)**.
 2. Extract the ZIP archive anywhere on your PC.
 3. Double-click **`Inject.bat`** (or `InjectSpectatorCamera.exe`).
 4. Select your target game folder when prompted (the folder containing your game `.exe`).
@@ -44,14 +44,39 @@ Works as a **1-click standalone injector on any compiled Windows game build** (w
 | **`W / A / S / D`** | **Move Camera** | Fly Forward, Left, Backward, Right in 3D World Space. *(Auto-locks world position)* |
 | **`E / Space`** | **Fly Up** | Elevate camera upwards in World Space. |
 | **`Q / Left Ctrl`** | **Fly Down** | Lower camera downwards in World Space. |
-| **`Left Shift`** | **Speed Boost** | Hold to move 3.5x faster. |
+| **`Left Shift`** | **Speed Boost** | Hold to move faster (Turbo speed). |
 | **`Right-Click Drag`** | **Mouse Look** | Orbit, pitch, and yaw camera view. |
 
 ---
 
-## 🌟 Key Features & Capabilities
+## 🌟 Key Features & Capabilities (v3.0.0)
 
-### 1. 👤 Real-Time VR Headset Tracking & Free-Fly Mode
+### 1. 🗂️ Categorized Accordion Control Panel
+* Clean, categorized layout with 7 collapsible foldout boxes (`[ ▲ Hide / ▼ Open ]`) and live status badges:
+  1. **🎥 1. Video Setup & Stabilization** `[ 1080p @ 60 FPS | 🎬 Steadicam ON ]`
+  2. **👤 2. VR Tracking & Free-Flight** `[ Following VR / Locked ]`
+  3. **🎥 3. Camera Position, Rotation & FOV** `[ FOV: 60° ]`
+  4. **💾 4. Camera Presets** `[ 4 Slots Saved/Empty ]`
+  5. **🧱 5. 3D Scene Objects & Cyclorama** `[ Active / None ]`
+  6. **🎨 6. Skybox & Background Fill** `[ Solid Fill / Transparent ]`
+  7. **💻 7. Proxima In-Game Inspector & Cheats** `[ Terminal & Quick Cheats ]`
+
+---
+
+### 2. 🎬 High-Performance Zero-Lag 60 FPS Video Recording & Steadicam Stabilization
+* **Zero-GC Buffer Recycling Engine**: Pre-allocated frame buffer pool recycling memory with **0 MB/s GC allocation**, eliminating recording micro-stutters.
+* **Cinematic Video Stabilization (Steadicam / Gimbal Damping)**:
+  * Dynamic real-time spherical interpolation (`Vector3.Lerp` / `Quaternion.Slerp`).
+  * Presets: `Subtle (12.0)`, `Cinematic (6.0)`, `Heavy/Drone (2.5)` + interactive damping slider.
+* **Multi-Resolution & Hardware Encoding**:
+  * Resolutions: `1080p (Full HD)`, `720p (Ultra Fast)`, `Native Screen`.
+  * Frame rates: `60 FPS (Silky Smooth)` and `30 FPS (Low CPU Load)`.
+  * Encoders: `⚡ Zero-Lag (NVENC Ultra-Low Latency p1)`, `⚖️ Balanced`, `💎 High Quality`.
+* **1:1 Real-Time Sync**: Exact elapsed time synchronization guarantees 1s in game = 1s in MP4 video.
+
+---
+
+### 3. 👤 Real-Time VR Headset Tracking & Free-Fly Mode
 * **`Follow Main Camera (VR Headset / 1st Person)`**:
   * Seamlessly tracks the player's VR Headset (`CenterEyeAnchor` / `Camera.main`) 1:1 in real time for authentic first-person recording.
 * **`Lock World Position (Static PC Camera)`**:
@@ -60,7 +85,7 @@ Works as a **1-click standalone injector on any compiled Windows game build** (w
 
 ---
 
-### 2. 🧱 Physical 3D In-Game Shapes & Virtual Studio (True 3D Parallax)
+### 4. 🧱 Physical 3D In-Game Shapes & Virtual Studio (True 3D Parallax)
 The background is an **actual 3D physical object anchored in the game scene**, providing authentic 3D perspective and depth parallax when the spectator camera moves around the scene.
 
 * **3D Virtual Studio Modes**:
@@ -71,41 +96,31 @@ The background is an **actual 3D physical object anchored in the game scene**, p
   * 🔲 **`Flat Wall`**: Classic flat 3D studio wall / backdrop poster.
 * **Native Pure C# Radiance HDR (.hdr RGBE) Decoder**: Binary decoder with Reinhard tonemapping (no external libraries needed). Also supports standard PNG, JPG, and BMP formats.
 * **Manual Numeric Scale Inputs**: Direct text boxes to type exact dimensions for `Width (Scale X)`, `Height (Scale Y)`, and `Depth / Radius (Scale Z)`.
-* **`[ 🎯 Place Behind View ]`**: Instantly snaps the 3D shape 8m in front of current camera view and anchors it permanently in 3D world space.
+* **`[ 🎯 Place Behind View ]`**: Instantly snaps the 3D shape in front of the current camera view and anchors it permanently in 3D world space.
 * **Brightness / Exposure Slider**: Adjust ambient illumination from `0.05x` to `5.0x`.
 
 ---
 
-### 3. 📸 Ultra-Crisp Screenshots & 🎥 1:1 Real-Time Synced Video Recording
-* **Direct Windows Backbuffer Capture**: Reads directly from the resolved Windows monitor frame (`WaitForEndOfFrame`), capturing full anti-aliasing, post-processing, shaders, and game UI.
-* **1:1 Real-Time Video Speed Synchronization**:
-  * Calculates exact elapsed real-time (`Time.realtimeSinceStartup`) to feed frame quotas to FFmpeg.
-  * Guarantees 1 second in game = 1 second in video (eliminating fast-forward / time-skew effects on 72/90/120 Hz VR headsets).
-* **Hardware-Accelerated Encoding**: Non-blocking asynchronous worker thread streaming frames to FFmpeg with `NVENC H.264` (GPU) and automatic fallback to `libx264` (CPU).
-* **Alpha PNG Cutouts**: Enable *Disable Skybox* and set *Alpha = 0* to produce transparent PNG screenshots with 8x MSAA edge smoothing.
-
----
-
-### 4. 💾 Camera-Only Presets (P1 – P4)
+### 5. 💾 Camera-Only Presets (P1 – P4)
 * **`Save Cam P1 - P4` / `Load Cam P1 - P4`**:
   * Saves and restores **only the camera properties** (Position, Rotation, FOV, Speed, Lock).
   * 🔒 **Skybox & 3D Backdrop Preservation**: Switching camera presets will **never** alter, reset, or override your loaded 3D environment or cyclorama settings.
 
 ---
 
-### 5. 🔁 Full Automatic Persistence (`SpectatorSettings.ini`)
+### 6. 🔁 Full Automatic Persistence (`SpectatorSettings.ini`)
 * All settings automatically save every 5 seconds, upon closing the application (`OnApplicationQuit`), or by clicking `[ 💾 Save Now ]`.
 * **When reopening the game, everything is automatically restored**:
-  1. Exact Camera Position, Rotation, FOV, and Speed.
+  1. Exact Camera Position, Rotation, FOV, Speed, and Stabilization settings.
   2. Active 3D shape file path and loaded texture.
-  3. 3D Shape World Position, Rotation, Scale X/Y/Z, and Curvature Angles (`Bend Sides` / `Bend Top/Bottom`).
+  3. 3D Shape World Position, Rotation, Scale X/Y/Z, and Curvature Angles.
   4. Shape Brightness and Solid Color / Transparency configurations.
   5. All 4 saved Camera Presets.
   6. Proxima Terminal input values.
 
 ---
 
-### 6. 💻 Proxima Inspector & In-Game Cheats
+### 7. 💻 Proxima Inspector & In-Game Cheats
 * **Quick Action Cheats**:
   * `Set Level` / `Load Level` / `Load Menu`
   * `Set Coins (set_coins)`

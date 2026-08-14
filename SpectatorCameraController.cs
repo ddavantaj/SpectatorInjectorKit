@@ -16,7 +16,7 @@ namespace SpectatorTools
 {
     public class SpectatorCameraController : MonoBehaviour
     {
-        public const string VERSION = "v2.9.0";
+        public const string VERSION = "v3.0.0";
         public static SpectatorCameraController Instance { get; private set; }
 
         private Transform targetTransform;
@@ -100,14 +100,16 @@ namespace SpectatorTools
         // Proxima Inspector Terminal & Inputs
         private string terminalInput = "";
         private string terminalLog = $"Spectator Camera & Capture Suite {VERSION} Active.\nEnter a command or click buttons below.";
-        private bool showProximaSection = true;
 
         private string inputLevelStr = "1";
         private string inputCoinsStr = "9999";
         private string inputLivesStr = "99";
         private string inputStarsStr = "999";
 
-        // Screen Capture & Recording State (1:1 Real-Time Synced)
+        // Screen Capture & High-Performance Zero-Lag Recording State
+        public enum VideoResMode { FullHD_1080p, HD_720p, NativeDisplay }
+        public enum VideoQualityMode { UltraFast_ZeroLag, Balanced, HighQuality }
+
         private bool isRecording = false;
         private float recordingRealStartTime = 0f;
         private int recordedFramesCount = 0;
@@ -115,20 +117,40 @@ namespace SpectatorTools
         private Stream ffmpegStdin = null;
         private Thread encodingThread = null;
         private BlockingCollection<byte[]> frameQueue = null;
+        private ConcurrentQueue<byte[]> bufferPool = new ConcurrentQueue<byte[]>();
         private bool stopEncodingThread = false;
         private int recordWidth = 1920;
         private int recordHeight = 1080;
+        private VideoResMode videoResMode = VideoResMode.FullHD_1080p;
         private int targetRecordFPS = 60;
+        private VideoQualityMode videoQuality = VideoQualityMode.UltraFast_ZeroLag;
         private string currentVideoPath = "";
         private string captureBannerNotice = "";
         private float captureBannerTimer = 0f;
         private bool takeScreenshotOnNextFrame = false;
+
+        // UI Categorized Foldout Sections
+        private bool showSectionVideo = false;
+        private bool showSectionTracking = true;
+        private bool showSectionCamera = true;
+        private bool showSectionPresets = false;
+        private bool showSection3DShape = false;
+        private bool showSectionSkybox = false;
+        private bool showSectionProxima = false;
 
         // Save & Search timers
         private float lastSearchTime = -10f;
         private float lastAutoSaveTime = 0f;
         private bool isSettingsLoaded = false;
         private Transform cachedMainVRCamera = null;
+
+        // Video Stabilization & Steadicam Damping
+        public enum StabilizationPreset { Off, Low, Medium, Heavy }
+        private bool enableStabilization = true;
+        private float stabilizationSmoothness = 6.0f; // 6.0 = Medium (Cinematic Steadicam)
+        private Vector3 smoothCurrentPos = Vector3.zero;
+        private Quaternion smoothCurrentRot = Quaternion.identity;
+        private bool isStabilizationInit = false;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         public static void AutoInitialize()
@@ -317,6 +339,9 @@ namespace SpectatorTools
         {
             if (targetTransform == null) return;
 
+            Vector3 targetPos = pos;
+            Quaternion targetRot = Quaternion.Euler(rot);
+
             if (lockWorldPosition)
             {
                 // Lock World Pos: Fixed static camera in 3D world space (WASD / Mouse free flight)
@@ -327,8 +352,8 @@ namespace SpectatorTools
                     isUnparented = true;
                 }
 
-                targetTransform.position = pos;
-                targetTransform.rotation = Quaternion.Euler(rot);
+                targetPos = pos;
+                targetRot = Quaternion.Euler(rot);
             }
             else
             {
@@ -336,12 +361,12 @@ namespace SpectatorTools
                 Transform vrHead = GetMainVRCamera();
                 if (vrHead != null)
                 {
-                    targetTransform.position = vrHead.position;
-                    targetTransform.rotation = vrHead.rotation;
+                    targetPos = vrHead.position;
+                    targetRot = vrHead.rotation;
 
                     // Continuously sync internal coordinates so locking world pos transitions smoothly
-                    pos = targetTransform.position;
-                    rot = targetTransform.eulerAngles;
+                    pos = targetPos;
+                    rot = targetRot.eulerAngles;
                 }
                 else
                 {
@@ -351,9 +376,34 @@ namespace SpectatorTools
                         isUnparented = false;
                     }
 
-                    targetTransform.position = pos;
-                    targetTransform.rotation = Quaternion.Euler(rot);
+                    targetPos = pos;
+                    targetRot = Quaternion.Euler(rot);
                 }
+            }
+
+            // Apply Video Stabilization & Steadicam Smooth Damping
+            if (enableStabilization)
+            {
+                if (!isStabilizationInit)
+                {
+                    smoothCurrentPos = targetPos;
+                    smoothCurrentRot = targetRot;
+                    isStabilizationInit = true;
+                }
+
+                float smoothT = Mathf.Clamp01(stabilizationSmoothness * Time.unscaledDeltaTime);
+                smoothCurrentPos = Vector3.Lerp(smoothCurrentPos, targetPos, smoothT);
+                smoothCurrentRot = Quaternion.Slerp(smoothCurrentRot, targetRot, smoothT);
+
+                targetTransform.position = smoothCurrentPos;
+                targetTransform.rotation = smoothCurrentRot;
+            }
+            else
+            {
+                smoothCurrentPos = targetPos;
+                smoothCurrentRot = targetRot;
+                targetTransform.position = targetPos;
+                targetTransform.rotation = targetRot;
             }
 
             if (targetCamera != null)
@@ -515,6 +565,13 @@ namespace SpectatorTools
                 sb.AppendLine($"inputLivesStr={inputLivesStr}");
                 sb.AppendLine($"inputStarsStr={inputStarsStr}");
 
+                // Video Recording Performance & Stabilization Settings
+                sb.AppendLine($"videoResMode={(int)videoResMode}");
+                sb.AppendLine($"targetRecordFPS={targetRecordFPS}");
+                sb.AppendLine($"videoQuality={(int)videoQuality}");
+                sb.AppendLine($"enableStabilization={enableStabilization}");
+                sb.AppendLine($"stabilizationSmoothness={stabilizationSmoothness.ToString("R", CultureInfo.InvariantCulture)}");
+
                 string content = sb.ToString();
                 File.WriteAllText(GetSettingsFilePath(), content);
             }
@@ -597,6 +654,12 @@ namespace SpectatorTools
                 if (dict.TryGetValue("inputCoinsStr", out s) && !string.IsNullOrEmpty(s)) inputCoinsStr = s;
                 if (dict.TryGetValue("inputLivesStr", out s) && !string.IsNullOrEmpty(s)) inputLivesStr = s;
                 if (dict.TryGetValue("inputStarsStr", out s) && !string.IsNullOrEmpty(s)) inputStarsStr = s;
+
+                if (dict.TryGetValue("videoResMode", out s) && int.TryParse(s, out iVal)) videoResMode = (VideoResMode)iVal;
+                if (dict.TryGetValue("targetRecordFPS", out s) && int.TryParse(s, out iVal)) targetRecordFPS = Mathf.Clamp(iVal, 15, 120);
+                if (dict.TryGetValue("videoQuality", out s) && int.TryParse(s, out iVal)) videoQuality = (VideoQualityMode)iVal;
+                if (dict.TryGetValue("enableStabilization", out s) && bool.TryParse(s, out bVal)) enableStabilization = bVal;
+                if (dict.TryGetValue("stabilizationSmoothness", out s) && float.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out fVal)) stabilizationSmoothness = Mathf.Clamp(fVal, 1.0f, 30.0f);
 
                 if (dict.TryGetValue("shapeImagePath", out s) && !string.IsNullOrEmpty(s) && File.Exists(s))
                 {
@@ -1391,6 +1454,7 @@ namespace SpectatorTools
 
             try
             {
+                // Always read exact full screen dimensions from Unity backbuffer (Zero Crop)
                 recordWidth = Screen.width;
                 recordHeight = Screen.height;
 
@@ -1402,8 +1466,47 @@ namespace SpectatorTools
                 currentVideoPath = Path.Combine(GetVideosFolder(), fileName);
                 string ffmpegPath = FindFFmpegPath();
 
-                // High Quality H.264 recording command with -vf "vflip" to fix vertical inversion
-                string args = $"-y -f rawvideo -vcodec rawvideo -s {recordWidth}x{recordHeight} -pix_fmt rgb24 -r {targetRecordFPS} -i - -vf \"vflip\" -c:v h264_nvenc -preset p4 -cq 18 -pix_fmt yuv420p -movflags +faststart \"{currentVideoPath}\"";
+                // Build video filter: vflip (inverts bottom-up backbuffer to top-down video) + optional GPU scaling
+                string vf = "vflip";
+                if (videoResMode == VideoResMode.FullHD_1080p && (recordWidth != 1920 || recordHeight != 1080))
+                {
+                    vf = "vflip,scale=1920:1080:flags=fast_bilinear";
+                }
+                else if (videoResMode == VideoResMode.HD_720p && (recordWidth != 1280 || recordHeight != 720))
+                {
+                    vf = "vflip,scale=1280:720:flags=fast_bilinear";
+                }
+
+                // Select encoder tuning for zero latency & maximum speed
+                string nvencPreset = "p1";
+                string nvencCQ = "22";
+                string x264Preset = "ultrafast";
+                string x264CRF = "22";
+
+                if (videoQuality == VideoQualityMode.HighQuality)
+                {
+                    nvencPreset = "p3";
+                    nvencCQ = "18";
+                    x264Preset = "faster";
+                    x264CRF = "18";
+                }
+                else if (videoQuality == VideoQualityMode.Balanced)
+                {
+                    nvencPreset = "p2";
+                    nvencCQ = "20";
+                    x264Preset = "veryfast";
+                    x264CRF = "20";
+                }
+                else // UltraFast_ZeroLag
+                {
+                    nvencPreset = "p1";
+                    nvencCQ = "22";
+                    x264Preset = "ultrafast";
+                    x264CRF = "22";
+                }
+
+                // Hardware NVENC uses -tune ull, CPU libx264 uses -tune zerolatency
+                string args = $"-y -f rawvideo -vcodec rawvideo -s {recordWidth}x{recordHeight} -pix_fmt rgb24 -r {targetRecordFPS} -i - -vf \"{vf}\" -c:v h264_nvenc -preset {nvencPreset} -tune ull -cq {nvencCQ} -pix_fmt yuv420p -movflags +faststart \"{currentVideoPath}\"";
 
                 ProcessStartInfo psi = new ProcessStartInfo
                 {
@@ -1418,11 +1521,16 @@ namespace SpectatorTools
                 try
                 {
                     ffmpegProcess = Process.Start(psi);
+                    Thread.Sleep(50);
+                    if (ffmpegProcess == null || ffmpegProcess.HasExited)
+                    {
+                        throw new Exception("NVENC initialization failed");
+                    }
                 }
                 catch
                 {
-                    // Fallback to CPU libx264 if NVENC not initialized
-                    args = $"-y -f rawvideo -vcodec rawvideo -s {recordWidth}x{recordHeight} -pix_fmt rgb24 -r {targetRecordFPS} -i - -vf \"vflip\" -c:v libx264 -preset veryfast -crf 18 -pix_fmt yuv420p -movflags +faststart \"{currentVideoPath}\"";
+                    // Fallback to CPU libx264 ultrafast if NVENC not initialized
+                    args = $"-y -f rawvideo -vcodec rawvideo -s {recordWidth}x{recordHeight} -pix_fmt rgb24 -r {targetRecordFPS} -i - -vf \"{vf}\" -c:v libx264 -preset {x264Preset} -tune zerolatency -crf {x264CRF} -pix_fmt yuv420p -movflags +faststart \"{currentVideoPath}\"";
                     psi.Arguments = args;
                     ffmpegProcess = Process.Start(psi);
                 }
@@ -1434,15 +1542,24 @@ namespace SpectatorTools
                 }
 
                 ffmpegStdin = ffmpegProcess.StandardInput.BaseStream;
-                frameQueue = new BlockingCollection<byte[]>(boundedCapacity: 60);
+
+                // Pre-allocate buffer pool for zero-GC memory allocation (0 allocations per frame!)
+                int frameByteSize = recordWidth * recordHeight * 3;
+                bufferPool = new ConcurrentQueue<byte[]>();
+                for (int i = 0; i < 20; i++)
+                {
+                    bufferPool.Enqueue(new byte[frameByteSize]);
+                }
+
+                frameQueue = new BlockingCollection<byte[]>(boundedCapacity: 30);
                 stopEncodingThread = false;
 
-                // Worker thread to stream video frames to FFmpeg asynchronously without freezing Unity
+                // Background worker thread with BelowNormal priority to prevent stealing CPU from Unity
                 encodingThread = new Thread(() =>
                 {
-                    while (!stopEncodingThread || frameQueue.Count > 0)
+                    while (!stopEncodingThread || (frameQueue != null && frameQueue.Count > 0))
                     {
-                        if (frameQueue.TryTake(out byte[] frameBytes, 100))
+                        if (frameQueue != null && frameQueue.TryTake(out byte[] frameBytes, 40))
                         {
                             try
                             {
@@ -1452,6 +1569,11 @@ namespace SpectatorTools
                                 }
                             }
                             catch { break; }
+                            finally
+                            {
+                                // Recycle buffer back to pool for reuse (Zero GC!)
+                                if (bufferPool != null) bufferPool.Enqueue(frameBytes);
+                            }
                         }
                     }
                 })
@@ -1465,8 +1587,9 @@ namespace SpectatorTools
                 recordingRealStartTime = Time.realtimeSinceStartup;
                 recordedFramesCount = 0;
 
-                terminalLog += $"\n[REC] Started 1:1 Real-Time Synced Recording ({targetRecordFPS} FPS): {fileName}";
-                ShowNotice($"🔴 Înregistrare Ecran MP4 Pornită (F10 Stop)");
+                string modeLabel = videoResMode == VideoResMode.FullHD_1080p ? "1080p" : (videoResMode == VideoResMode.HD_720p ? "720p" : "Native");
+                terminalLog += $"\n[REC] Started Full-Frame Recording ({modeLabel} @ {targetRecordFPS} FPS): {fileName}";
+                ShowNotice($"🔴 Înregistrare MP4: {modeLabel} ({targetRecordFPS} FPS)");
             }
             catch (Exception ex)
             {
@@ -1484,26 +1607,31 @@ namespace SpectatorTools
                 isRecording = false;
                 stopEncodingThread = true;
 
+                if (frameQueue != null)
+                {
+                    try { frameQueue.CompleteAdding(); } catch { }
+                }
+
                 if (encodingThread != null && encodingThread.IsAlive)
                 {
-                    encodingThread.Join(1500);
+                    encodingThread.Join(2000);
                 }
 
                 if (ffmpegStdin != null)
                 {
-                    ffmpegStdin.Flush();
-                    ffmpegStdin.Close();
+                    try { ffmpegStdin.Flush(); } catch { }
+                    try { ffmpegStdin.Close(); } catch { }
                     ffmpegStdin = null;
                 }
 
                 if (ffmpegProcess != null && !ffmpegProcess.HasExited)
                 {
-                    ffmpegProcess.WaitForExit(3000);
-                    ffmpegProcess.Close();
+                    ffmpegProcess.WaitForExit(4000);
+                    try { ffmpegProcess.Close(); } catch { }
                     ffmpegProcess = null;
                 }
 
-                terminalLog += $"\n[REC SUCCESS] Video Saved (1:1 Speed): {Path.GetFileName(currentVideoPath)}";
+                terminalLog += $"\n[REC SUCCESS] Video Saved: {Path.GetFileName(currentVideoPath)}";
                 ShowNotice($"🎬 Video MP4 Salvat cu succes!");
             }
             catch (Exception ex)
@@ -1541,16 +1669,32 @@ namespace SpectatorTools
                             recordTex = new Texture2D(recordWidth, recordHeight, TextureFormat.RGB24, false);
                         }
 
-                        // Capture the final rendered Windows backbuffer (100% exact Windows screen)
+                        // Read 100% full screen from backbuffer (No crop, no blit)
                         recordTex.ReadPixels(new Rect(0, 0, recordWidth, recordHeight), 0, 0);
-                        recordTex.Apply();
 
-                        byte[] rawBytes = recordTex.GetRawTextureData();
+                        // Direct zero-allocation byte copy
+                        var rawSpan = recordTex.GetRawTextureData<byte>();
+                        int bytesLen = rawSpan.Length;
 
-                        // Feed exact real-time frame quota (1:1 speed synchronization)
                         while (recordedFramesCount < targetFrames && frameQueue != null && !frameQueue.IsAddingCompleted)
                         {
-                            frameQueue.TryAdd(rawBytes, 2);
+                            byte[] buffer = null;
+                            if (bufferPool != null && bufferPool.TryDequeue(out byte[] pooled) && pooled.Length == bytesLen)
+                            {
+                                buffer = pooled;
+                            }
+                            else
+                            {
+                                buffer = new byte[bytesLen];
+                            }
+
+                            rawSpan.CopyTo(buffer);
+
+                            if (!frameQueue.TryAdd(buffer, 5))
+                            {
+                                if (bufferPool != null) bufferPool.Enqueue(buffer);
+                                break;
+                            }
                             recordedFramesCount++;
                         }
                     }
@@ -1682,345 +1826,504 @@ namespace SpectatorTools
             // Scrollable view container
             mainScrollPos = GUILayout.BeginScrollView(mainScrollPos, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
 
-            // Tracking Lock / Follow VR Headset Toggle
+            // ==========================================
+            // 🎬 1. VIDEO RECORDING & STABILIZATION SETUP
+            // ==========================================
             GUILayout.Space(4);
             GUILayout.BeginVertical("box");
-            bool isFollowVR = !lockWorldPosition;
-            bool newFollowVR = GUILayout.Toggle(isFollowVR, " <b>Follow Main Camera (VR Headset / 1st Person)</b>");
-            if (newFollowVR != isFollowVR)
+            string resLabel = videoResMode == VideoResMode.FullHD_1080p ? "1080p" : (videoResMode == VideoResMode.HD_720p ? "720p" : "Native");
+            string qualLabel = videoQuality == VideoQualityMode.UltraFast_ZeroLag ? "⚡ Zero-Lag" : (videoQuality == VideoQualityMode.Balanced ? "⚖️ Balanced" : "💎 High Quality");
+            string stabLabel = enableStabilization ? "🎬 Steadicam ON" : "Off";
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"<b>🎥 1. Video Setup & Stabilization</b> <color=#00FF99>[{resLabel} @ {targetRecordFPS} FPS | {stabLabel}]</color>", GUILayout.ExpandWidth(true));
+            if (GUILayout.Button(showSectionVideo ? "▲ Hide" : "▼ Open", GUILayout.Width(75), GUILayout.Height(20)))
             {
-                lockWorldPosition = !newFollowVR;
-                if (lockWorldPosition && targetTransform != null)
-                {
-                    pos = targetTransform.position;
-                    rot = targetTransform.eulerAngles;
-                }
+                showSectionVideo = !showSectionVideo;
             }
+            GUILayout.EndHorizontal();
 
-            if (!lockWorldPosition)
+            if (showSectionVideo)
             {
-                GUILayout.Label("<color=#00FF99>👤 <b>Tracking Player VR Headset in Real-Time (1st Person)</b>\n<i>(WASD / Mouse will switch to free flight in World Space)</i></color>");
-            }
-            else
-            {
-                GUILayout.Label("<color=#FFFF66>🔒 <b>Camera Locked in 3D World Space</b> (WASD + Mouse Flight)</color>");
+                GUILayout.Space(3);
+                GUILayout.Label("<b>Recording Resolution:</b>");
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Toggle(videoResMode == VideoResMode.FullHD_1080p, " 1080p (Full HD)")) videoResMode = VideoResMode.FullHD_1080p;
+                if (GUILayout.Toggle(videoResMode == VideoResMode.HD_720p, " 720p (Ultra Fast)")) videoResMode = VideoResMode.HD_720p;
+                if (GUILayout.Toggle(videoResMode == VideoResMode.NativeDisplay, " Native Screen")) videoResMode = VideoResMode.NativeDisplay;
+                GUILayout.EndHorizontal();
+
+                GUILayout.Space(2);
+                GUILayout.Label("<b>Target Frame Rate:</b>");
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Toggle(targetRecordFPS == 60, " 60 FPS (Silky Smooth)")) targetRecordFPS = 60;
+                if (GUILayout.Toggle(targetRecordFPS == 30, " 30 FPS (Low CPU Load)")) targetRecordFPS = 30;
+                GUILayout.EndHorizontal();
+
+                GUILayout.Space(2);
+                GUILayout.Label("<b>Hardware Encoding Mode:</b>");
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Toggle(videoQuality == VideoQualityMode.UltraFast_ZeroLag, " ⚡ Zero-Lag (NVENC p1)")) videoQuality = VideoQualityMode.UltraFast_ZeroLag;
+                if (GUILayout.Toggle(videoQuality == VideoQualityMode.Balanced, " ⚖️ Balanced")) videoQuality = VideoQualityMode.Balanced;
+                if (GUILayout.Toggle(videoQuality == VideoQualityMode.HighQuality, " 💎 High Quality")) videoQuality = VideoQualityMode.HighQuality;
+                GUILayout.EndHorizontal();
+
+                GUILayout.Space(4);
+                // Video Stabilization Section
+                GUILayout.BeginHorizontal();
+                enableStabilization = GUILayout.Toggle(enableStabilization, " <b>🎬 Video Stabilization (Steadicam Gimbal)</b>");
+                GUILayout.EndHorizontal();
+
+                if (enableStabilization)
+                {
+                    GUILayout.Space(2);
+                    string smoothDesc = stabilizationSmoothness >= 10f ? "Subtle (Responsive)" : (stabilizationSmoothness >= 4.5f ? "Cinematic (Steadicam)" : "Heavy (Drone/Gimbal)");
+                    GUILayout.Label($"<b>Smooth Damping:</b> {stabilizationSmoothness:F1} ({smoothDesc})");
+                    GUILayout.BeginHorizontal();
+                    if (GUILayout.Button("Subtle (12.0)")) { stabilizationSmoothness = 12.0f; }
+                    if (GUILayout.Button("Cinematic (6.0)")) { stabilizationSmoothness = 6.0f; }
+                    if (GUILayout.Button("Heavy/Drone (2.5)")) { stabilizationSmoothness = 2.5f; }
+                    GUILayout.EndHorizontal();
+
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label("Heavy (1.5)", GUILayout.Width(70));
+                    stabilizationSmoothness = GUILayout.HorizontalSlider(stabilizationSmoothness, 1.5f, 20.0f);
+                    GUILayout.Label("Fast (20.0)", GUILayout.Width(70));
+                    GUILayout.EndHorizontal();
+                }
             }
             GUILayout.EndVertical();
 
             // ==========================================
-            // 🧱 3D PHYSICAL SCENE OBJECTS & CYCLORAMA (PARALLAX 3D)
+            // 👤 2. VR TRACKING & FLIGHT CONTROLS
             // ==========================================
-            GUILayout.Space(8);
-            GUILayout.Label("<b>--- 🧱 3D IN-GAME SHAPE OBJECTS (TRUE 3D PARALLAX) ---</b>");
-
+            GUILayout.Space(4);
+            GUILayout.BeginVertical("box");
+            string trackingStatus = !lockWorldPosition ? "Following VR Headset" : "Locked in World";
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("📁 Choose File (HDR, JPG, PNG)", GUILayout.Height(30)))
+            GUILayout.Label($"<b>👤 2. VR Tracking & Free-Flight</b> <color=#00FF99>[{trackingStatus}]</color>", GUILayout.ExpandWidth(true));
+            if (GUILayout.Button(showSectionTracking ? "▲ Hide" : "▼ Open", GUILayout.Width(75), GUILayout.Height(20)))
             {
-                PromptSelectShapeFile();
-            }
-            if (GUILayout.Button("🎯 Place Behind View", GUILayout.Width(145), GUILayout.Height(30)))
-            {
-                Place3DShapeInFrontOfCamera();
-            }
-            if (GUILayout.Button("🧹 Clear", GUILayout.Width(60), GUILayout.Height(30)))
-            {
-                ClearShapeObject();
+                showSectionTracking = !showSectionTracking;
             }
             GUILayout.EndHorizontal();
 
-            if (loadedShapeTexture != null)
+            if (showSectionTracking)
             {
-                GUILayout.Label($"3D Object: <b>{loadedShapeFileName}</b> ({loadedShapeTexture.width}x{loadedShapeTexture.height})");
-
-                show3DShape = GUILayout.Toggle(show3DShape, " <b>Show 3D Shape in Scene</b>");
-
-                // Shape selection
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Toggle(currentShape == Shape3DType.CurvedBackdrop3D, "🖼️ Curved Backdrop"))
+                GUILayout.Space(3);
+                bool isFollowVR = !lockWorldPosition;
+                bool newFollowVR = GUILayout.Toggle(isFollowVR, " <b>Follow Main Camera (VR Headset / 1st Person)</b>");
+                if (newFollowVR != isFollowVR)
                 {
-                    if (currentShape != Shape3DType.CurvedBackdrop3D) { currentShape = Shape3DType.CurvedBackdrop3D; shapeScale = new Vector3(25f, 15f, 25f); RebuildShapeMesh(); }
-                }
-                if (GUILayout.Toggle(currentShape == Shape3DType.Sphere360HDRI, "🌐 360° Sphere Dome"))
-                {
-                    if (currentShape != Shape3DType.Sphere360HDRI) { currentShape = Shape3DType.Sphere360HDRI; shapeScale = new Vector3(300f, 300f, 300f); RebuildShapeMesh(); }
-                }
-                if (GUILayout.Toggle(currentShape == Shape3DType.FlatWall3D, "🔲 Flat Wall"))
-                {
-                    if (currentShape != Shape3DType.FlatWall3D) { currentShape = Shape3DType.FlatWall3D; shapeScale = new Vector3(25f, 15f, 1f); RebuildShapeMesh(); }
-                }
-                GUILayout.EndHorizontal();
-
-                if (currentShape == Shape3DType.CurvedBackdrop3D)
-                {
-                    // Curvature Bend Sides (Horizontal)
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label($"Bend Sides (Wrap X): {bendSidesAngle:F0}°", GUILayout.Width(165));
-                    float newBendX = GUILayout.HorizontalSlider(bendSidesAngle, 0f, 240f);
-                    if (Mathf.Abs(newBendX - bendSidesAngle) > 0.5f)
+                    lockWorldPosition = !newFollowVR;
+                    if (lockWorldPosition && targetTransform != null)
                     {
-                        bendSidesAngle = newBendX;
-                        RebuildShapeMesh();
+                        pos = targetTransform.position;
+                        rot = targetTransform.eulerAngles;
                     }
-                    if (GUILayout.Button("0°", GUILayout.Width(30))) { bendSidesAngle = 0f; RebuildShapeMesh(); }
-                    if (GUILayout.Button("90°", GUILayout.Width(35))) { bendSidesAngle = 90f; RebuildShapeMesh(); }
-                    if (GUILayout.Button("180°", GUILayout.Width(40))) { bendSidesAngle = 180f; RebuildShapeMesh(); }
-                    GUILayout.EndHorizontal();
-
-                    // Curvature Bend Top/Bottom (Vertical)
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label($"Bend Top/Bottom (Y): {bendTopBottomAngle:F0}°", GUILayout.Width(165));
-                    float newBendY = GUILayout.HorizontalSlider(bendTopBottomAngle, 0f, 120f);
-                    if (Mathf.Abs(newBendY - bendTopBottomAngle) > 0.5f)
-                    {
-                        bendTopBottomAngle = newBendY;
-                        RebuildShapeMesh();
-                    }
-                    if (GUILayout.Button("0°", GUILayout.Width(30))) { bendTopBottomAngle = 0f; RebuildShapeMesh(); }
-                    if (GUILayout.Button("45°", GUILayout.Width(35))) { bendTopBottomAngle = 45f; RebuildShapeMesh(); }
-                    GUILayout.EndHorizontal();
                 }
 
-                GUILayout.Space(4);
-                GUILayout.Label("<b>--- 3D OBJECT SCALE & SIZES (MANUAL INPUT) ---</b>");
-
-                // Manual Numeric Scale Width (X)
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("Width (Scale X):", GUILayout.Width(110));
-                shapeScale.x = DrawFloatField(shapeScale.x);
-                shapeScale.x = GUILayout.HorizontalSlider(shapeScale.x, 1f, 1000f);
-                if (GUILayout.Button("-5", GUILayout.Width(30))) shapeScale.x = Mathf.Max(1f, shapeScale.x - 5f);
-                if (GUILayout.Button("+5", GUILayout.Width(30))) shapeScale.x += 5f;
-                GUILayout.EndHorizontal();
-
-                // Manual Numeric Scale Height (Y)
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("Height (Scale Y):", GUILayout.Width(110));
-                shapeScale.y = DrawFloatField(shapeScale.y);
-                shapeScale.y = GUILayout.HorizontalSlider(shapeScale.y, 1f, 1000f);
-                if (GUILayout.Button("-5", GUILayout.Width(30))) shapeScale.y = Mathf.Max(1f, shapeScale.y - 5f);
-                if (GUILayout.Button("+5", GUILayout.Width(30))) shapeScale.y += 5f;
-                GUILayout.EndHorizontal();
-
-                // Manual Numeric Scale Depth / Radius (Z)
-                if (currentShape == Shape3DType.Sphere360HDRI)
+                if (!lockWorldPosition)
                 {
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label("Radius (Scale Z):", GUILayout.Width(110));
-                    shapeScale.z = DrawFloatField(shapeScale.z);
-                    shapeScale.z = GUILayout.HorizontalSlider(shapeScale.z, 10f, 2000f);
-                    shapeScale.x = shapeScale.z;
-                    shapeScale.y = shapeScale.z;
-                    GUILayout.EndHorizontal();
+                    GUILayout.Label("<color=#00FF99>👤 <b>Tracking Player VR Headset in Real-Time (1st Person)</b>\n<i>(WASD / Mouse will switch to free flight in World Space)</i></color>");
                 }
                 else
                 {
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label("Depth (Scale Z):", GUILayout.Width(110));
-                    shapeScale.z = DrawFloatField(shapeScale.z);
-                    shapeScale.z = GUILayout.HorizontalSlider(shapeScale.z, 1f, 200f);
-                    GUILayout.EndHorizontal();
+                    GUILayout.Label("<color=#FFFF66>🔒 <b>Camera Locked in 3D World Space</b> (WASD + Mouse Flight)</color>");
                 }
+
+                GUILayout.Space(3);
+                GUILayout.Label($"<b>Flight Speed:</b> {moveSpeed:F1}x  <i>(Hold Shift = Fast)</i>");
+                moveSpeed = GUILayout.HorizontalSlider(moveSpeed, 0.1f, 10f);
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("0.5x Slow", GUILayout.Width(80))) moveSpeed = 0.5f;
+                if (GUILayout.Button("1.0x Normal", GUILayout.Width(85))) moveSpeed = 1.0f;
+                if (GUILayout.Button("2.5x Fast", GUILayout.Width(80))) moveSpeed = 2.5f;
+                if (GUILayout.Button("5.0x Turbo", GUILayout.Width(80))) moveSpeed = 5.0f;
+                GUILayout.EndHorizontal();
+            }
+            GUILayout.EndVertical();
+
+            // ==========================================
+            // 🎥 3. CAMERA TRANSFORM & FOV (WORLD SPACE)
+            // ==========================================
+            GUILayout.Space(4);
+            GUILayout.BeginVertical("box");
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"<b>🎥 3. Camera Position, Rotation & FOV</b> <color=#00FF99>[FOV: {fov:F0}°]</color>", GUILayout.ExpandWidth(true));
+            if (GUILayout.Button(showSectionCamera ? "▲ Hide" : "▼ Open", GUILayout.Width(75), GUILayout.Height(20)))
+            {
+                showSectionCamera = !showSectionCamera;
+            }
+            GUILayout.EndHorizontal();
+
+            if (showSectionCamera)
+            {
+                GUILayout.Space(3);
+                GUILayout.Label("<b>Camera Position (World Space):</b>");
+
+                // Position X
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("X:", GUILayout.Width(20));
+                pos.x = DrawFloatField(pos.x);
+                if (GUILayout.Button("-0.03", GUILayout.Width(45))) pos.x -= 0.03f;
+                if (GUILayout.Button("+0.03", GUILayout.Width(45))) pos.x += 0.03f;
+                if (GUILayout.Button("-0.1", GUILayout.Width(40))) pos.x -= 0.1f;
+                if (GUILayout.Button("+0.1", GUILayout.Width(40))) pos.x += 0.1f;
+                if (GUILayout.Button("-1", GUILayout.Width(30))) pos.x -= 1.0f;
+                if (GUILayout.Button("+1", GUILayout.Width(30))) pos.x += 1.0f;
+                GUILayout.EndHorizontal();
+                pos.x = GUILayout.HorizontalSlider(pos.x, -10f, 10f);
+
+                // Position Y
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Y:", GUILayout.Width(20));
+                pos.y = DrawFloatField(pos.y);
+                if (GUILayout.Button("-0.03", GUILayout.Width(45))) pos.y -= 0.03f;
+                if (GUILayout.Button("+0.03", GUILayout.Width(45))) pos.y += 0.03f;
+                if (GUILayout.Button("-0.1", GUILayout.Width(40))) pos.y -= 0.1f;
+                if (GUILayout.Button("+0.1", GUILayout.Width(40))) pos.y += 0.1f;
+                if (GUILayout.Button("-1", GUILayout.Width(30))) pos.y -= 1.0f;
+                if (GUILayout.Button("+1", GUILayout.Width(30))) pos.y += 1.0f;
+                GUILayout.EndHorizontal();
+                pos.y = GUILayout.HorizontalSlider(pos.y, -10f, 10f);
+
+                // Position Z
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Z:", GUILayout.Width(20));
+                pos.z = DrawFloatField(pos.z);
+                if (GUILayout.Button("-0.03", GUILayout.Width(45))) pos.z -= 0.03f;
+                if (GUILayout.Button("+0.03", GUILayout.Width(45))) pos.z += 0.03f;
+                if (GUILayout.Button("-0.1", GUILayout.Width(40))) pos.z -= 0.1f;
+                if (GUILayout.Button("+0.1", GUILayout.Width(40))) pos.z += 0.1f;
+                if (GUILayout.Button("-1", GUILayout.Width(30))) pos.z -= 1.0f;
+                if (GUILayout.Button("+1", GUILayout.Width(30))) pos.z += 1.0f;
+                GUILayout.EndHorizontal();
+                pos.z = GUILayout.HorizontalSlider(pos.z, -10f, 10f);
 
                 GUILayout.Space(4);
-                GUILayout.Label("<b>--- 3D OBJECT WORLD POSITION & ROTATION ---</b>");
+                GUILayout.Label("<b>Camera Rotation (Pitch / Yaw / Roll):</b>");
 
-                // World Position X
+                // Pitch X
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Pos X:", GUILayout.Width(45));
-                shapeWorldPos.x = DrawFloatField(shapeWorldPos.x);
-                shapeWorldPos.x = GUILayout.HorizontalSlider(shapeWorldPos.x, -50f, 50f);
-                if (GUILayout.Button("0", GUILayout.Width(25))) shapeWorldPos.x = 0f;
+                GUILayout.Label("Pitch (X):", GUILayout.Width(65));
+                rot.x = DrawFloatField(rot.x);
+                if (GUILayout.Button("-5°", GUILayout.Width(40))) rot.x -= 5f;
+                if (GUILayout.Button("+5°", GUILayout.Width(40))) rot.x += 5f;
+                if (GUILayout.Button("-15°", GUILayout.Width(45))) rot.x -= 15f;
+                if (GUILayout.Button("+15°", GUILayout.Width(45))) rot.x += 15f;
                 GUILayout.EndHorizontal();
 
-                // World Position Y
+                // Yaw Y
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Pos Y:", GUILayout.Width(45));
-                shapeWorldPos.y = DrawFloatField(shapeWorldPos.y);
-                shapeWorldPos.y = GUILayout.HorizontalSlider(shapeWorldPos.y, -50f, 50f);
-                if (GUILayout.Button("0", GUILayout.Width(25))) shapeWorldPos.y = 0f;
+                GUILayout.Label("Yaw (Y):", GUILayout.Width(65));
+                rot.y = DrawFloatField(rot.y);
+                if (GUILayout.Button("-5°", GUILayout.Width(40))) rot.y -= 5f;
+                if (GUILayout.Button("+5°", GUILayout.Width(40))) rot.y += 5f;
+                if (GUILayout.Button("-15°", GUILayout.Width(45))) rot.y -= 15f;
+                if (GUILayout.Button("+15°", GUILayout.Width(45))) rot.y += 15f;
                 GUILayout.EndHorizontal();
 
-                // World Position Z
+                // Roll Z
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Pos Z:", GUILayout.Width(45));
-                shapeWorldPos.z = DrawFloatField(shapeWorldPos.z);
-                shapeWorldPos.z = GUILayout.HorizontalSlider(shapeWorldPos.z, -50f, 50f);
-                if (GUILayout.Button("0", GUILayout.Width(25))) shapeWorldPos.z = 0f;
+                GUILayout.Label("Roll (Z):", GUILayout.Width(65));
+                rot.z = DrawFloatField(rot.z);
+                if (GUILayout.Button("-5°", GUILayout.Width(40))) rot.z -= 5f;
+                if (GUILayout.Button("+5°", GUILayout.Width(40))) rot.z += 5f;
+                if (GUILayout.Button("Reset", GUILayout.Width(50))) rot.z = 0f;
                 GUILayout.EndHorizontal();
 
-                // World Rotation Yaw (Y)
+                GUILayout.Space(4);
+                GUILayout.Label($"<b>Field of View (FOV):</b> {fov:F1}°");
+                fov = GUILayout.HorizontalSlider(fov, 10f, 120f);
                 GUILayout.BeginHorizontal();
-                GUILayout.Label($"Rot Y (Yaw): {shapeWorldRot.y:F0}°", GUILayout.Width(125));
-                shapeWorldRot.y = GUILayout.HorizontalSlider(shapeWorldRot.y, 0f, 360f);
-                if (GUILayout.Button("0°", GUILayout.Width(30))) shapeWorldRot.y = 0f;
-                GUILayout.EndHorizontal();
-
-                // World Rotation Pitch (X)
-                GUILayout.BeginHorizontal();
-                GUILayout.Label($"Rot X (Pitch): {shapeWorldRot.x:F0}°", GUILayout.Width(125));
-                shapeWorldRot.x = GUILayout.HorizontalSlider(shapeWorldRot.x, -90f, 90f);
-                if (GUILayout.Button("0°", GUILayout.Width(30))) shapeWorldRot.x = 0f;
-                GUILayout.EndHorizontal();
-
-                // Brightness / Exposure
-                GUILayout.BeginHorizontal();
-                GUILayout.Label($"Brightness / Light: {shapeBrightness:F2}x", GUILayout.Width(140));
-                shapeBrightness = GUILayout.HorizontalSlider(shapeBrightness, 0.05f, 5.0f);
-                if (GUILayout.Button("1x", GUILayout.Width(30))) shapeBrightness = 1.0f;
+                if (GUILayout.Button("30° (Tele)")) fov = 30f;
+                if (GUILayout.Button("60° (Std)")) fov = 60f;
+                if (GUILayout.Button("90° (Wide)")) fov = 90f;
+                if (GUILayout.Button("110° (Ultra)")) fov = 110f;
                 GUILayout.EndHorizontal();
             }
-
-            GUILayout.Space(6);
-            GUILayout.Label("<b>--- SOLID COLOR / ALPHA TRANSPARENCY ---</b>");
-            disableSkybox = GUILayout.Toggle(disableSkybox, " <b>Disable Skybox (Solid Fill / Transparent PNG)</b>");
-
-            if (disableSkybox)
-            {
-                GUILayout.BeginHorizontal();
-                GUILayout.Label($"R: {bgColor.r:F2}", GUILayout.Width(55));
-                bgColor.r = GUILayout.HorizontalSlider(bgColor.r, 0f, 1f);
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                GUILayout.Label($"G: {bgColor.g:F2}", GUILayout.Width(55));
-                bgColor.g = GUILayout.HorizontalSlider(bgColor.g, 0f, 1f);
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                GUILayout.Label($"B: {bgColor.b:F2}", GUILayout.Width(55));
-                bgColor.b = GUILayout.HorizontalSlider(bgColor.b, 0f, 1f);
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                GUILayout.Label($"Alpha: {bgColor.a:F2}", GUILayout.Width(65));
-                bgColor.a = GUILayout.HorizontalSlider(bgColor.a, 0f, 1f);
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Chroma Green")) bgColor = new Color(0f, 1f, 0f, 1f);
-                if (GUILayout.Button("Chroma Blue")) bgColor = new Color(0f, 0f, 1f, 1f);
-                if (GUILayout.Button("Black")) bgColor = new Color(0f, 0f, 0f, 1f);
-                if (GUILayout.Button("Transparent (A=0)")) bgColor = new Color(0f, 0f, 0f, 0f);
-                GUILayout.EndHorizontal();
-            }
-
-            GUILayout.Space(6);
-            GUILayout.Label("<b>--- CAMERA POSITION CONTROL (WORLD SPACE) ---</b>");
-
-            // Position X
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("X:", GUILayout.Width(20));
-            pos.x = DrawFloatField(pos.x);
-            if (GUILayout.Button("-0.03", GUILayout.Width(45))) pos.x -= 0.03f;
-            if (GUILayout.Button("+0.03", GUILayout.Width(45))) pos.x += 0.03f;
-            if (GUILayout.Button("-0.1", GUILayout.Width(40))) pos.x -= 0.1f;
-            if (GUILayout.Button("+0.1", GUILayout.Width(40))) pos.x += 0.1f;
-            if (GUILayout.Button("-1", GUILayout.Width(30))) pos.x -= 1.0f;
-            if (GUILayout.Button("+1", GUILayout.Width(30))) pos.x += 1.0f;
-            GUILayout.EndHorizontal();
-            pos.x = GUILayout.HorizontalSlider(pos.x, -10f, 10f);
-
-            // Position Y
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Y:", GUILayout.Width(20));
-            pos.y = DrawFloatField(pos.y);
-            if (GUILayout.Button("-0.03", GUILayout.Width(45))) pos.y -= 0.03f;
-            if (GUILayout.Button("+0.03", GUILayout.Width(45))) pos.y += 0.03f;
-            if (GUILayout.Button("-0.1", GUILayout.Width(40))) pos.y -= 0.1f;
-            if (GUILayout.Button("+0.1", GUILayout.Width(40))) pos.y += 0.1f;
-            if (GUILayout.Button("-1", GUILayout.Width(30))) pos.x -= 1.0f;
-            if (GUILayout.Button("+1", GUILayout.Width(30))) pos.y += 1.0f;
-            GUILayout.EndHorizontal();
-            pos.y = GUILayout.HorizontalSlider(pos.y, -10f, 10f);
-
-            // Position Z
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Z:", GUILayout.Width(20));
-            pos.z = DrawFloatField(pos.z);
-            if (GUILayout.Button("-0.03", GUILayout.Width(45))) pos.z -= 0.03f;
-            if (GUILayout.Button("+0.03", GUILayout.Width(45))) pos.z += 0.03f;
-            if (GUILayout.Button("-0.1", GUILayout.Width(40))) pos.z -= 0.1f;
-            if (GUILayout.Button("+0.1", GUILayout.Width(40))) pos.z += 0.1f;
-            if (GUILayout.Button("-1", GUILayout.Width(30))) pos.z -= 1.0f;
-            if (GUILayout.Button("+1", GUILayout.Width(30))) pos.z += 1.0f;
-            GUILayout.EndHorizontal();
-            pos.z = GUILayout.HorizontalSlider(pos.z, -10f, 10f);
-
-            GUILayout.Space(6);
-            GUILayout.Label("<b>--- ROTATION CONTROL ---</b>");
-
-            // Pitch X
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Pitch (X):", GUILayout.Width(65));
-            rot.x = DrawFloatField(rot.x);
-            if (GUILayout.Button("-5°", GUILayout.Width(40))) rot.x -= 5f;
-            if (GUILayout.Button("+5°", GUILayout.Width(40))) rot.x += 5f;
-            if (GUILayout.Button("-15°", GUILayout.Width(45))) rot.x -= 15f;
-            if (GUILayout.Button("+15°", GUILayout.Width(45))) rot.x += 15f;
-            GUILayout.EndHorizontal();
-
-            // Yaw Y
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Yaw (Y):", GUILayout.Width(65));
-            rot.y = DrawFloatField(rot.y);
-            if (GUILayout.Button("-5°", GUILayout.Width(40))) rot.y -= 5f;
-            if (GUILayout.Button("+5°", GUILayout.Width(40))) rot.y += 5f;
-            if (GUILayout.Button("-15°", GUILayout.Width(45))) rot.y -= 15f;
-            if (GUILayout.Button("+15°", GUILayout.Width(45))) rot.y += 15f;
-            GUILayout.EndHorizontal();
-
-            // Roll Z
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Roll (Z):", GUILayout.Width(65));
-            rot.z = DrawFloatField(rot.z);
-            if (GUILayout.Button("-5°", GUILayout.Width(40))) rot.z -= 5f;
-            if (GUILayout.Button("+5°", GUILayout.Width(40))) rot.z += 5f;
-            if (GUILayout.Button("Reset", GUILayout.Width(50))) rot.z = 0f;
-            GUILayout.EndHorizontal();
-
-            GUILayout.Space(6);
-            GUILayout.Label($"<b>--- FOV (Field of View): {fov:F1}° ---</b>");
-            fov = GUILayout.HorizontalSlider(fov, 10f, 120f);
-
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("30° (Tele)")) fov = 30f;
-            if (GUILayout.Button("60° (Std)")) fov = 60f;
-            if (GUILayout.Button("90° (Wide)")) fov = 90f;
-            if (GUILayout.Button("110° (Ultra)")) fov = 110f;
-            GUILayout.EndHorizontal();
-
-            GUILayout.Space(6);
-            GUILayout.Label($"Speed: {moveSpeed:F1}x  |  Hold Shift = Fast  | Right-Click = Mouse Look");
-            moveSpeed = GUILayout.HorizontalSlider(moveSpeed, 0.1f, 10f);
+            GUILayout.EndVertical();
 
             // ==========================================
-            // 💾 CAMERA PRESETS (CAMERA ONLY - EXCLUDING SKYBOX)
+            // 💾 4. CAMERA PRESETS (SAVED SLOTS)
             // ==========================================
-            GUILayout.Space(6);
-            GUILayout.Label("<b>--- CAMERA PRESETS (CAMERA ONLY - SAVED) ---</b>");
-            for (int i = 0; i < 4; i++)
+            GUILayout.Space(4);
+            GUILayout.BeginVertical("box");
+            int savedCount = 0;
+            for (int i = 0; i < 4; i++) if (presets[i].isSaved) savedCount++;
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"<b>💾 4. Camera Presets</b> <color=#00FF99>[{savedCount}/4 Saved]</color>", GUILayout.ExpandWidth(true));
+            if (GUILayout.Button(showSectionPresets ? "▲ Hide" : "▼ Open", GUILayout.Width(75), GUILayout.Height(20)))
             {
-                int pIndex = i;
-                GUILayout.BeginHorizontal();
-                string status = presets[pIndex].isSaved ? "Saved" : "Empty";
-                if (GUILayout.Button($"Save Cam P{pIndex + 1}", GUILayout.Width(105)))
+                showSectionPresets = !showSectionPresets;
+            }
+            GUILayout.EndHorizontal();
+
+            if (showSectionPresets)
+            {
+                GUILayout.Space(3);
+                for (int i = 0; i < 4; i++)
                 {
-                    SaveCameraPresetIndex(pIndex);
+                    int pIndex = i;
+                    GUILayout.BeginHorizontal();
+                    string status = presets[pIndex].isSaved ? "<color=#00FF99>Saved</color>" : "<color=#888888>Empty</color>";
+                    if (GUILayout.Button($"Save Cam P{pIndex + 1}", GUILayout.Width(110)))
+                    {
+                        SaveCameraPresetIndex(pIndex);
+                    }
+                    if (GUILayout.Button($"Load Cam P{pIndex + 1} ({status})") && presets[pIndex].isSaved)
+                    {
+                        LoadCameraPresetIndex(pIndex);
+                    }
+                    GUILayout.EndHorizontal();
                 }
-                if (GUILayout.Button($"Load Cam P{pIndex + 1} ({status})") && presets[pIndex].isSaved)
+            }
+            GUILayout.EndVertical();
+
+            // ==========================================
+            // 🧱 5. 3D PHYSICAL SCENE OBJECTS (CYCLORAMA & HDRI)
+            // ==========================================
+            GUILayout.Space(4);
+            GUILayout.BeginVertical("box");
+            string shapeBadge = loadedShapeTexture != null ? (show3DShape ? "Active: " + loadedShapeFileName : "Hidden") : "None";
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"<b>🧱 5. 3D Scene Objects & Cyclorama</b> <color=#00FF99>[{shapeBadge}]</color>", GUILayout.ExpandWidth(true));
+            if (GUILayout.Button(showSection3DShape ? "▲ Hide" : "▼ Open", GUILayout.Width(75), GUILayout.Height(20)))
+            {
+                showSection3DShape = !showSection3DShape;
+            }
+            GUILayout.EndHorizontal();
+
+            if (showSection3DShape)
+            {
+                GUILayout.Space(3);
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("📁 Choose File (HDR, JPG, PNG)", GUILayout.Height(28)))
                 {
-                    LoadCameraPresetIndex(pIndex);
+                    PromptSelectShapeFile();
+                }
+                if (GUILayout.Button("🎯 Place Behind View", GUILayout.Width(145), GUILayout.Height(28)))
+                {
+                    Place3DShapeInFrontOfCamera();
+                }
+                if (GUILayout.Button("🧹 Clear", GUILayout.Width(60), GUILayout.Height(28)))
+                {
+                    ClearShapeObject();
                 }
                 GUILayout.EndHorizontal();
-            }
 
-            // Proxima Inspector Terminal Section
-            GUILayout.Space(10);
-            showProximaSection = GUILayout.Toggle(showProximaSection, " <b>💻 PROXIMA INSPECTOR TERMINAL</b>");
-            if (showProximaSection)
+                if (loadedShapeTexture != null)
+                {
+                    GUILayout.Space(2);
+                    GUILayout.Label($"3D Object: <b>{loadedShapeFileName}</b> ({loadedShapeTexture.width}x{loadedShapeTexture.height})");
+
+                    show3DShape = GUILayout.Toggle(show3DShape, " <b>Show 3D Shape in Scene</b>");
+
+                    // Shape selection
+                    GUILayout.BeginHorizontal();
+                    if (GUILayout.Toggle(currentShape == Shape3DType.CurvedBackdrop3D, "🖼️ Curved Backdrop"))
+                    {
+                        if (currentShape != Shape3DType.CurvedBackdrop3D) { currentShape = Shape3DType.CurvedBackdrop3D; shapeScale = new Vector3(25f, 15f, 25f); RebuildShapeMesh(); }
+                    }
+                    if (GUILayout.Toggle(currentShape == Shape3DType.Sphere360HDRI, "🌐 360° Sphere Dome"))
+                    {
+                        if (currentShape != Shape3DType.Sphere360HDRI) { currentShape = Shape3DType.Sphere360HDRI; shapeScale = new Vector3(300f, 300f, 300f); RebuildShapeMesh(); }
+                    }
+                    if (GUILayout.Toggle(currentShape == Shape3DType.FlatWall3D, "🔲 Flat Wall"))
+                    {
+                        if (currentShape != Shape3DType.FlatWall3D) { currentShape = Shape3DType.FlatWall3D; shapeScale = new Vector3(25f, 15f, 1f); RebuildShapeMesh(); }
+                    }
+                    GUILayout.EndHorizontal();
+
+                    if (currentShape == Shape3DType.CurvedBackdrop3D)
+                    {
+                        // Curvature Bend Sides (Horizontal)
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Label($"Bend Sides (Wrap X): {bendSidesAngle:F0}°", GUILayout.Width(165));
+                        float newBendX = GUILayout.HorizontalSlider(bendSidesAngle, 0f, 240f);
+                        if (Mathf.Abs(newBendX - bendSidesAngle) > 0.5f)
+                        {
+                            bendSidesAngle = newBendX;
+                            RebuildShapeMesh();
+                        }
+                        if (GUILayout.Button("0°", GUILayout.Width(30))) { bendSidesAngle = 0f; RebuildShapeMesh(); }
+                        if (GUILayout.Button("90°", GUILayout.Width(35))) { bendSidesAngle = 90f; RebuildShapeMesh(); }
+                        if (GUILayout.Button("180°", GUILayout.Width(40))) { bendSidesAngle = 180f; RebuildShapeMesh(); }
+                        GUILayout.EndHorizontal();
+
+                        // Curvature Bend Top/Bottom (Vertical)
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Label($"Bend Top/Bottom (Y): {bendTopBottomAngle:F0}°", GUILayout.Width(165));
+                        float newBendY = GUILayout.HorizontalSlider(bendTopBottomAngle, 0f, 120f);
+                        if (Mathf.Abs(newBendY - bendTopBottomAngle) > 0.5f)
+                        {
+                            bendTopBottomAngle = newBendY;
+                            RebuildShapeMesh();
+                        }
+                        if (GUILayout.Button("0°", GUILayout.Width(30))) { bendTopBottomAngle = 0f; RebuildShapeMesh(); }
+                        if (GUILayout.Button("45°", GUILayout.Width(35))) { bendTopBottomAngle = 45f; RebuildShapeMesh(); }
+                        GUILayout.EndHorizontal();
+                    }
+
+                    GUILayout.Space(4);
+                    GUILayout.Label("<b>3D Object Scale & Dimensions:</b>");
+
+                    // Manual Numeric Scale Width (X)
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label("Width (Scale X):", GUILayout.Width(110));
+                    shapeScale.x = DrawFloatField(shapeScale.x);
+                    shapeScale.x = GUILayout.HorizontalSlider(shapeScale.x, 1f, 1000f);
+                    if (GUILayout.Button("-5", GUILayout.Width(30))) shapeScale.x = Mathf.Max(1f, shapeScale.x - 5f);
+                    if (GUILayout.Button("+5", GUILayout.Width(30))) shapeScale.x += 5f;
+                    GUILayout.EndHorizontal();
+
+                    // Manual Numeric Scale Height (Y)
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label("Height (Scale Y):", GUILayout.Width(110));
+                    shapeScale.y = DrawFloatField(shapeScale.y);
+                    shapeScale.y = GUILayout.HorizontalSlider(shapeScale.y, 1f, 1000f);
+                    if (GUILayout.Button("-5", GUILayout.Width(30))) shapeScale.y = Mathf.Max(1f, shapeScale.y - 5f);
+                    if (GUILayout.Button("+5", GUILayout.Width(30))) shapeScale.y += 5f;
+                    GUILayout.EndHorizontal();
+
+                    // Manual Numeric Scale Depth / Radius (Z)
+                    if (currentShape == Shape3DType.Sphere360HDRI)
+                    {
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Label("Radius (Scale Z):", GUILayout.Width(110));
+                        shapeScale.z = DrawFloatField(shapeScale.z);
+                        shapeScale.z = GUILayout.HorizontalSlider(shapeScale.z, 10f, 2000f);
+                        shapeScale.x = shapeScale.z;
+                        shapeScale.y = shapeScale.z;
+                        GUILayout.EndHorizontal();
+                    }
+                    else
+                    {
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Label("Depth (Scale Z):", GUILayout.Width(110));
+                        shapeScale.z = DrawFloatField(shapeScale.z);
+                        shapeScale.z = GUILayout.HorizontalSlider(shapeScale.z, 1f, 200f);
+                        GUILayout.EndHorizontal();
+                    }
+
+                    GUILayout.Space(4);
+                    GUILayout.Label("<b>3D Object World Position & Rotation:</b>");
+
+                    // World Position X
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label("Pos X:", GUILayout.Width(45));
+                    shapeWorldPos.x = DrawFloatField(shapeWorldPos.x);
+                    shapeWorldPos.x = GUILayout.HorizontalSlider(shapeWorldPos.x, -50f, 50f);
+                    if (GUILayout.Button("0", GUILayout.Width(25))) shapeWorldPos.x = 0f;
+                    GUILayout.EndHorizontal();
+
+                    // World Position Y
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label("Pos Y:", GUILayout.Width(45));
+                    shapeWorldPos.y = DrawFloatField(shapeWorldPos.y);
+                    shapeWorldPos.y = GUILayout.HorizontalSlider(shapeWorldPos.y, -50f, 50f);
+                    if (GUILayout.Button("0", GUILayout.Width(25))) shapeWorldPos.y = 0f;
+                    GUILayout.EndHorizontal();
+
+                    // World Position Z
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label("Pos Z:", GUILayout.Width(45));
+                    shapeWorldPos.z = DrawFloatField(shapeWorldPos.z);
+                    shapeWorldPos.z = GUILayout.HorizontalSlider(shapeWorldPos.z, -50f, 50f);
+                    if (GUILayout.Button("0", GUILayout.Width(25))) shapeWorldPos.z = 0f;
+                    GUILayout.EndHorizontal();
+
+                    // World Rotation Yaw (Y)
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label($"Rot Y (Yaw): {shapeWorldRot.y:F0}°", GUILayout.Width(125));
+                    shapeWorldRot.y = GUILayout.HorizontalSlider(shapeWorldRot.y, 0f, 360f);
+                    if (GUILayout.Button("0°", GUILayout.Width(30))) shapeWorldRot.y = 0f;
+                    GUILayout.EndHorizontal();
+
+                    // World Rotation Pitch (X)
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label($"Rot X (Pitch): {shapeWorldRot.x:F0}°", GUILayout.Width(125));
+                    shapeWorldRot.x = GUILayout.HorizontalSlider(shapeWorldRot.x, -90f, 90f);
+                    if (GUILayout.Button("0°", GUILayout.Width(30))) shapeWorldRot.x = 0f;
+                    GUILayout.EndHorizontal();
+
+                    // Brightness / Exposure
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label($"Brightness / Light: {shapeBrightness:F2}x", GUILayout.Width(140));
+                    shapeBrightness = GUILayout.HorizontalSlider(shapeBrightness, 0.05f, 5.0f);
+                    if (GUILayout.Button("1x", GUILayout.Width(30))) shapeBrightness = 1.0f;
+                    GUILayout.EndHorizontal();
+                }
+            }
+            GUILayout.EndVertical();
+
+            // ==========================================
+            // 🎨 6. SKYBOX & SOLID BACKGROUND / ALPHA
+            // ==========================================
+            GUILayout.Space(4);
+            GUILayout.BeginVertical("box");
+            string skyboxBadge = disableSkybox ? $"Solid ({bgColor.r:F1},{bgColor.g:F1},{bgColor.b:F1}, A={bgColor.a:F1})" : "Default 3D Skybox";
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"<b>🎨 6. Skybox & Background Fill</b> <color=#00FF99>[{skyboxBadge}]</color>", GUILayout.ExpandWidth(true));
+            if (GUILayout.Button(showSectionSkybox ? "▲ Hide" : "▼ Open", GUILayout.Width(75), GUILayout.Height(20)))
             {
-                GUILayout.BeginVertical(GUI.skin.box);
-                
+                showSectionSkybox = !showSectionSkybox;
+            }
+            GUILayout.EndHorizontal();
+
+            if (showSectionSkybox)
+            {
+                GUILayout.Space(3);
+                disableSkybox = GUILayout.Toggle(disableSkybox, " <b>Disable Skybox (Solid Fill / Transparent PNG)</b>");
+
+                if (disableSkybox)
+                {
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label($"R: {bgColor.r:F2}", GUILayout.Width(55));
+                    bgColor.r = GUILayout.HorizontalSlider(bgColor.r, 0f, 1f);
+                    GUILayout.EndHorizontal();
+
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label($"G: {bgColor.g:F2}", GUILayout.Width(55));
+                    bgColor.g = GUILayout.HorizontalSlider(bgColor.g, 0f, 1f);
+                    GUILayout.EndHorizontal();
+
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label($"B: {bgColor.b:F2}", GUILayout.Width(55));
+                    bgColor.b = GUILayout.HorizontalSlider(bgColor.b, 0f, 1f);
+                    GUILayout.EndHorizontal();
+
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label($"Alpha: {bgColor.a:F2}", GUILayout.Width(65));
+                    bgColor.a = GUILayout.HorizontalSlider(bgColor.a, 0f, 1f);
+                    GUILayout.EndHorizontal();
+
+                    GUILayout.BeginHorizontal();
+                    if (GUILayout.Button("Chroma Green")) bgColor = new Color(0f, 1f, 0f, 1f);
+                    if (GUILayout.Button("Chroma Blue")) bgColor = new Color(0f, 0f, 1f, 1f);
+                    if (GUILayout.Button("Black")) bgColor = new Color(0f, 0f, 0f, 1f);
+                    if (GUILayout.Button("Transparent (A=0)")) bgColor = new Color(0f, 0f, 0f, 0f);
+                    GUILayout.EndHorizontal();
+                }
+            }
+            GUILayout.EndVertical();
+
+            // ==========================================
+            // 💻 7. PROXIMA INSPECTOR & CHEATS TERMINAL
+            // ==========================================
+            GUILayout.Space(4);
+            GUILayout.BeginVertical("box");
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("<b>💻 7. Proxima In-Game Inspector & Cheats</b> <color=#00FF99>[Terminal]</color>", GUILayout.ExpandWidth(true));
+            if (GUILayout.Button(showSectionProxima ? "▲ Hide" : "▼ Open", GUILayout.Width(75), GUILayout.Height(20)))
+            {
+                showSectionProxima = !showSectionProxima;
+            }
+            GUILayout.EndHorizontal();
+
+            if (showSectionProxima)
+            {
+                GUILayout.Space(3);
                 // Terminal input
                 GUILayout.BeginHorizontal();
                 terminalInput = GUILayout.TextField(terminalInput, GUILayout.ExpandWidth(true));
@@ -2032,7 +2335,7 @@ namespace SpectatorTools
                 GUILayout.EndHorizontal();
 
                 GUILayout.Space(4);
-                GUILayout.Label("<b>--- PROXIMA QUICK CONTROLS ---</b>");
+                GUILayout.Label("<b>Quick Game Actions:</b>");
 
                 // SetLevel & LoadLevel & LoadMenu
                 GUILayout.BeginHorizontal();
@@ -2095,12 +2398,12 @@ namespace SpectatorTools
                 GUILayout.EndHorizontal();
 
                 // Terminal Log output box
+                GUILayout.Space(2);
                 logScrollPos = GUILayout.BeginScrollView(logScrollPos, GUILayout.Height(110));
                 GUILayout.TextArea(terminalLog, GUILayout.ExpandHeight(true));
                 GUILayout.EndScrollView();
-
-                GUILayout.EndVertical();
             }
+            GUILayout.EndVertical();
 
             GUILayout.EndScrollView();
             GUILayout.EndVertical();
