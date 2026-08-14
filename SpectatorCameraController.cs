@@ -16,7 +16,7 @@ namespace SpectatorTools
 {
     public class SpectatorCameraController : MonoBehaviour
     {
-        public const string VERSION = "v3.0.0";
+        public const string VERSION = "v3.0.1";
         public static SpectatorCameraController Instance { get; private set; }
 
         private Transform targetTransform;
@@ -257,6 +257,8 @@ namespace SpectatorTools
             {
                 Vector3 delta = Input.mousePosition - lastMousePos;
                 lastMousePos = Input.mousePosition;
+
+                delta = Vector3.ClampMagnitude(delta, 80f);
 
                 rot.x -= delta.y * lookSensitivity * 0.1f;
                 rot.y += delta.x * lookSensitivity * 0.1f;
@@ -1730,6 +1732,9 @@ namespace SpectatorTools
         // 🖥️ IMGUI INTERFACE
         // ==========================================
 
+        private bool isDraggingWindow = false;
+        private Vector2 dragMouseOffset;
+
         private void OnGUI()
         {
             // Banner notification at top center
@@ -1743,13 +1748,55 @@ namespace SpectatorTools
             if (!showUI) return;
 
             GUI.color = Color.white;
-            float windowHeight = Mathf.Min(Screen.height - 40, 980);
-            windowRect = GUI.Window(889911, new Rect(30, 30, 490, windowHeight), DrawControlPanel, $"🎥 Spectator Camera & Capture Suite ({VERSION}) [F1 Hide]");
+            float windowHeight = isMinimized ? 40f : Mathf.Min(Screen.height - 40, 980);
+            windowRect.width = 490;
+            windowRect.height = windowHeight;
+
+            // Handle Dragging safely without delegate
+            Event e = Event.current;
+            Rect titleBarRect = new Rect(windowRect.x, windowRect.y, windowRect.width, 28);
+            if (e != null)
+            {
+                if (e.type == EventType.MouseDown && titleBarRect.Contains(e.mousePosition) && e.button == 0)
+                {
+                    isDraggingWindow = true;
+                    dragMouseOffset = e.mousePosition - new Vector2(windowRect.x, windowRect.y);
+                }
+                else if (e.type == EventType.MouseUp && e.button == 0)
+                {
+                    isDraggingWindow = false;
+                }
+                else if (e.type == EventType.MouseDrag && isDraggingWindow)
+                {
+                    windowRect.x = e.mousePosition.x - dragMouseOffset.x;
+                    windowRect.y = e.mousePosition.y - dragMouseOffset.y;
+                    windowRect.x = Mathf.Clamp(windowRect.x, 0, Screen.width - windowRect.width);
+                    windowRect.y = Mathf.Clamp(windowRect.y, 0, Screen.height - 40);
+                }
+            }
+
+            // Window Background & Header
+            GUI.Box(windowRect, "");
+            GUI.Box(titleBarRect, $"<b>🎥 Spectator Camera & Capture Suite ({VERSION}) [F1 Hide]</b>");
+
+            if (!isMinimized)
+            {
+                GUILayout.BeginArea(new Rect(windowRect.x + 6, windowRect.y + 32, windowRect.width - 12, windowRect.height - 38));
+                DrawControlPanel(0);
+                GUILayout.EndArea();
+            }
+            else
+            {
+                // Minimized Header button
+                if (GUI.Button(new Rect(windowRect.x + windowRect.width - 90, windowRect.y + 3, 85, 22), "[ Expand ]"))
+                {
+                    isMinimized = false;
+                }
+            }
         }
 
         private void DrawControlPanel(int windowID)
         {
-            GUI.DragWindow(new Rect(0, 0, 370, 25));
 
             GUILayout.BeginVertical();
 
@@ -1959,77 +2006,132 @@ namespace SpectatorTools
             if (showSectionCamera)
             {
                 GUILayout.Space(3);
+                
+                // Master Reset Button
+                GUILayout.BeginHorizontal();
+                GUI.backgroundColor = new Color(0.95f, 0.45f, 0.2f, 1f);
+                if (GUILayout.Button("🔄 Reset All Transform (Pos & Rot to 0)", GUILayout.Height(26)))
+                {
+                    pos = Vector3.zero;
+                    rot = Vector3.zero;
+                    ShowNotice("🔄 Poziție și Rotație resetate la (0, 0, 0)!");
+                }
+                GUI.backgroundColor = Color.white;
+                GUILayout.EndHorizontal();
+
+                GUILayout.Space(4);
                 GUILayout.Label("<b>Camera Position (World Space):</b>");
 
                 // Position X
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("X:", GUILayout.Width(20));
+                GUILayout.Label("X:", GUILayout.Width(18));
                 pos.x = DrawFloatField(pos.x);
-                if (GUILayout.Button("-0.03", GUILayout.Width(45))) pos.x -= 0.03f;
-                if (GUILayout.Button("+0.03", GUILayout.Width(45))) pos.x += 0.03f;
-                if (GUILayout.Button("-0.1", GUILayout.Width(40))) pos.x -= 0.1f;
-                if (GUILayout.Button("+0.1", GUILayout.Width(40))) pos.x += 0.1f;
-                if (GUILayout.Button("-1", GUILayout.Width(30))) pos.x -= 1.0f;
-                if (GUILayout.Button("+1", GUILayout.Width(30))) pos.x += 1.0f;
+                if (GUILayout.Button("-0.03", GUILayout.Width(42))) pos.x -= 0.03f;
+                if (GUILayout.Button("+0.03", GUILayout.Width(42))) pos.x += 0.03f;
+                if (GUILayout.Button("-0.1", GUILayout.Width(38))) pos.x -= 0.1f;
+                if (GUILayout.Button("+0.1", GUILayout.Width(38))) pos.x += 0.1f;
+                if (GUILayout.Button("-1", GUILayout.Width(26))) pos.x -= 1.0f;
+                if (GUILayout.Button("+1", GUILayout.Width(26))) pos.x += 1.0f;
+                GUI.backgroundColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+                if (GUILayout.Button("0", GUILayout.Width(24))) pos.x = 0f;
+                GUI.backgroundColor = Color.white;
                 GUILayout.EndHorizontal();
                 pos.x = GUILayout.HorizontalSlider(pos.x, -10f, 10f);
 
                 // Position Y
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Y:", GUILayout.Width(20));
+                GUILayout.Label("Y:", GUILayout.Width(18));
                 pos.y = DrawFloatField(pos.y);
-                if (GUILayout.Button("-0.03", GUILayout.Width(45))) pos.y -= 0.03f;
-                if (GUILayout.Button("+0.03", GUILayout.Width(45))) pos.y += 0.03f;
-                if (GUILayout.Button("-0.1", GUILayout.Width(40))) pos.y -= 0.1f;
-                if (GUILayout.Button("+0.1", GUILayout.Width(40))) pos.y += 0.1f;
-                if (GUILayout.Button("-1", GUILayout.Width(30))) pos.y -= 1.0f;
-                if (GUILayout.Button("+1", GUILayout.Width(30))) pos.y += 1.0f;
+                if (GUILayout.Button("-0.03", GUILayout.Width(42))) pos.y -= 0.03f;
+                if (GUILayout.Button("+0.03", GUILayout.Width(42))) pos.y += 0.03f;
+                if (GUILayout.Button("-0.1", GUILayout.Width(38))) pos.y -= 0.1f;
+                if (GUILayout.Button("+0.1", GUILayout.Width(38))) pos.y += 0.1f;
+                if (GUILayout.Button("-1", GUILayout.Width(26))) pos.y -= 1.0f;
+                if (GUILayout.Button("+1", GUILayout.Width(26))) pos.y += 1.0f;
+                GUI.backgroundColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+                if (GUILayout.Button("0", GUILayout.Width(24))) pos.y = 0f;
+                GUI.backgroundColor = Color.white;
                 GUILayout.EndHorizontal();
                 pos.y = GUILayout.HorizontalSlider(pos.y, -10f, 10f);
 
                 // Position Z
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Z:", GUILayout.Width(20));
+                GUILayout.Label("Z:", GUILayout.Width(18));
                 pos.z = DrawFloatField(pos.z);
-                if (GUILayout.Button("-0.03", GUILayout.Width(45))) pos.z -= 0.03f;
-                if (GUILayout.Button("+0.03", GUILayout.Width(45))) pos.z += 0.03f;
-                if (GUILayout.Button("-0.1", GUILayout.Width(40))) pos.z -= 0.1f;
-                if (GUILayout.Button("+0.1", GUILayout.Width(40))) pos.z += 0.1f;
-                if (GUILayout.Button("-1", GUILayout.Width(30))) pos.z -= 1.0f;
-                if (GUILayout.Button("+1", GUILayout.Width(30))) pos.z += 1.0f;
+                if (GUILayout.Button("-0.03", GUILayout.Width(42))) pos.z -= 0.03f;
+                if (GUILayout.Button("+0.03", GUILayout.Width(42))) pos.z += 0.03f;
+                if (GUILayout.Button("-0.1", GUILayout.Width(38))) pos.z -= 0.1f;
+                if (GUILayout.Button("+0.1", GUILayout.Width(38))) pos.z += 0.1f;
+                if (GUILayout.Button("-1", GUILayout.Width(26))) pos.z -= 1.0f;
+                if (GUILayout.Button("+1", GUILayout.Width(26))) pos.z += 1.0f;
+                GUI.backgroundColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+                if (GUILayout.Button("0", GUILayout.Width(24))) pos.z = 0f;
+                GUI.backgroundColor = Color.white;
                 GUILayout.EndHorizontal();
                 pos.z = GUILayout.HorizontalSlider(pos.z, -10f, 10f);
 
-                GUILayout.Space(4);
+                // Reset Position Sub-Button
+                GUILayout.BeginHorizontal();
+                GUI.backgroundColor = new Color(0.3f, 0.7f, 1f, 1f);
+                if (GUILayout.Button("🔄 Reset Position (0, 0, 0)", GUILayout.Height(22)))
+                {
+                    pos = Vector3.zero;
+                    ShowNotice("🔄 Poziție resetată la (0, 0, 0)!");
+                }
+                GUI.backgroundColor = Color.white;
+                GUILayout.EndHorizontal();
+
+                GUILayout.Space(5);
                 GUILayout.Label("<b>Camera Rotation (Pitch / Yaw / Roll):</b>");
 
                 // Pitch X
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Pitch (X):", GUILayout.Width(65));
+                GUILayout.Label("Pitch (X):", GUILayout.Width(62));
                 rot.x = DrawFloatField(rot.x);
-                if (GUILayout.Button("-5°", GUILayout.Width(40))) rot.x -= 5f;
-                if (GUILayout.Button("+5°", GUILayout.Width(40))) rot.x += 5f;
-                if (GUILayout.Button("-15°", GUILayout.Width(45))) rot.x -= 15f;
-                if (GUILayout.Button("+15°", GUILayout.Width(45))) rot.x += 15f;
+                if (GUILayout.Button("-5°", GUILayout.Width(38))) rot.x -= 5f;
+                if (GUILayout.Button("+5°", GUILayout.Width(38))) rot.x += 5f;
+                if (GUILayout.Button("-15°", GUILayout.Width(42))) rot.x -= 15f;
+                if (GUILayout.Button("+15°", GUILayout.Width(42))) rot.x += 15f;
+                GUI.backgroundColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+                if (GUILayout.Button("0°", GUILayout.Width(30))) rot.x = 0f;
+                GUI.backgroundColor = Color.white;
                 GUILayout.EndHorizontal();
 
                 // Yaw Y
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Yaw (Y):", GUILayout.Width(65));
+                GUILayout.Label("Yaw (Y):", GUILayout.Width(62));
                 rot.y = DrawFloatField(rot.y);
-                if (GUILayout.Button("-5°", GUILayout.Width(40))) rot.y -= 5f;
-                if (GUILayout.Button("+5°", GUILayout.Width(40))) rot.y += 5f;
-                if (GUILayout.Button("-15°", GUILayout.Width(45))) rot.y -= 15f;
-                if (GUILayout.Button("+15°", GUILayout.Width(45))) rot.y += 15f;
+                if (GUILayout.Button("-5°", GUILayout.Width(38))) rot.y -= 5f;
+                if (GUILayout.Button("+5°", GUILayout.Width(38))) rot.y += 5f;
+                if (GUILayout.Button("-15°", GUILayout.Width(42))) rot.y -= 15f;
+                if (GUILayout.Button("+15°", GUILayout.Width(42))) rot.y += 15f;
+                GUI.backgroundColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+                if (GUILayout.Button("0°", GUILayout.Width(30))) rot.y = 0f;
+                GUI.backgroundColor = Color.white;
                 GUILayout.EndHorizontal();
 
                 // Roll Z
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Roll (Z):", GUILayout.Width(65));
+                GUILayout.Label("Roll (Z):", GUILayout.Width(62));
                 rot.z = DrawFloatField(rot.z);
-                if (GUILayout.Button("-5°", GUILayout.Width(40))) rot.z -= 5f;
-                if (GUILayout.Button("+5°", GUILayout.Width(40))) rot.z += 5f;
-                if (GUILayout.Button("Reset", GUILayout.Width(50))) rot.z = 0f;
+                if (GUILayout.Button("-5°", GUILayout.Width(38))) rot.z -= 5f;
+                if (GUILayout.Button("+5°", GUILayout.Width(38))) rot.z += 5f;
+                if (GUILayout.Button("-15°", GUILayout.Width(42))) rot.z -= 15f;
+                if (GUILayout.Button("+15°", GUILayout.Width(42))) rot.z += 15f;
+                GUI.backgroundColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+                if (GUILayout.Button("0°", GUILayout.Width(30))) rot.z = 0f;
+                GUI.backgroundColor = Color.white;
+                GUILayout.EndHorizontal();
+
+                // Reset Rotation Sub-Button
+                GUILayout.BeginHorizontal();
+                GUI.backgroundColor = new Color(0.3f, 0.7f, 1f, 1f);
+                if (GUILayout.Button("🔄 Reset Rotation (0°, 0°, 0°)", GUILayout.Height(22)))
+                {
+                    rot = Vector3.zero;
+                    ShowNotice("🔄 Rotație resetată la (0°, 0°, 0°)!");
+                }
+                GUI.backgroundColor = Color.white;
                 GUILayout.EndHorizontal();
 
                 GUILayout.Space(4);
@@ -2593,10 +2695,16 @@ namespace SpectatorTools
 
         private float DrawFloatField(float val)
         {
-            string str = val.ToString("F2");
-            str = GUILayout.TextField(str, GUILayout.Width(65));
-            float parsed;
-            if (float.TryParse(str, NumberStyles.Any, CultureInfo.InvariantCulture, out parsed) || float.TryParse(str, out parsed)) return parsed;
+            string str = val.ToString("F2", CultureInfo.InvariantCulture);
+            string newStr = GUILayout.TextField(str, GUILayout.Width(58));
+            if (newStr != str)
+            {
+                newStr = newStr.Trim().Replace(',', '.');
+                if (float.TryParse(newStr, NumberStyles.Float, CultureInfo.InvariantCulture, out float parsed))
+                {
+                    return parsed;
+                }
+            }
             return val;
         }
     }
