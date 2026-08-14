@@ -16,7 +16,7 @@ namespace SpectatorTools
 {
     public class SpectatorCameraController : MonoBehaviour
     {
-        public const string VERSION = "v2.8.0";
+        public const string VERSION = "v2.9.0";
         public static SpectatorCameraController Instance { get; private set; }
 
         private Transform targetTransform;
@@ -128,16 +128,22 @@ namespace SpectatorTools
         private float lastSearchTime = -10f;
         private float lastAutoSaveTime = 0f;
         private bool isSettingsLoaded = false;
+        private Transform cachedMainVRCamera = null;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         public static void AutoInitialize()
         {
-            if (Instance == null)
+            try
             {
+                if (Instance != null) return;
                 GameObject go = new GameObject("[SpectatorCameraController]");
                 DontDestroyOnLoad(go);
                 Instance = go.AddComponent<SpectatorCameraController>();
                 Debug.Log($"[SpectatorCameraController] Injected and initialized successfully ({VERSION})!");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[SpectatorCameraController] AutoInitialize deferred: {ex.Message}");
             }
         }
 
@@ -201,6 +207,14 @@ namespace SpectatorTools
             if (Input.GetKey(KeyCode.E) || Input.GetKey(KeyCode.Space)) moveDir += Vector3.up;
             if (Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.LeftControl)) moveDir -= Vector3.up;
 
+            if (moveDir != Vector3.zero || isRightClickDragging)
+            {
+                if (!lockWorldPosition)
+                {
+                    lockWorldPosition = true;
+                }
+            }
+
             if (moveDir != Vector3.zero)
             {
                 pos += moveDir * currentSpeed * Time.deltaTime;
@@ -256,13 +270,56 @@ namespace SpectatorTools
             }
         }
 
+        public Transform GetMainVRCamera()
+        {
+            if (cachedMainVRCamera != null && cachedMainVRCamera.gameObject != null && cachedMainVRCamera.gameObject.activeInHierarchy)
+            {
+                return cachedMainVRCamera;
+            }
+
+            // 1. Look for CenterEyeAnchor (Oculus / OpenXR standard)
+            var centerEye = GameObject.Find("CenterEyeAnchor");
+            if (centerEye != null)
+            {
+                cachedMainVRCamera = centerEye.transform;
+                return cachedMainVRCamera;
+            }
+
+            // 2. Look for Camera.main
+            if (Camera.main != null && Camera.main.transform != targetTransform)
+            {
+                cachedMainVRCamera = Camera.main.transform;
+                return cachedMainVRCamera;
+            }
+
+            // 3. Look for MainCamera tag
+            var tagged = GameObject.FindWithTag("MainCamera");
+            if (tagged != null && tagged.transform != targetTransform)
+            {
+                cachedMainVRCamera = tagged.transform;
+                return cachedMainVRCamera;
+            }
+
+            // 4. Look for non-spectator camera
+            foreach (var cam in Camera.allCameras)
+            {
+                if (cam != null && cam.transform != targetTransform && !cam.name.Contains("Spectator"))
+                {
+                    cachedMainVRCamera = cam.transform;
+                    return cachedMainVRCamera;
+                }
+            }
+
+            return null;
+        }
+
         private void ApplyTransformAndSettings()
         {
             if (targetTransform == null) return;
 
             if (lockWorldPosition)
             {
-                // Unparent Spectator camera so it is independent of VR TrackingSpace movements
+                // Lock World Pos: Fixed static camera in 3D world space (WASD / Mouse free flight)
                 if (targetTransform.parent != null)
                 {
                     originalParent = targetTransform.parent;
@@ -275,15 +332,28 @@ namespace SpectatorTools
             }
             else
             {
-                // In free mode, maintain position
-                if (isUnparented && originalParent != null)
+                // Follow Main Camera (VR Headset / 1st Person Player View)
+                Transform vrHead = GetMainVRCamera();
+                if (vrHead != null)
                 {
-                    targetTransform.SetParent(originalParent, true);
-                    isUnparented = false;
-                }
+                    targetTransform.position = vrHead.position;
+                    targetTransform.rotation = vrHead.rotation;
 
-                targetTransform.position = pos;
-                targetTransform.rotation = Quaternion.Euler(rot);
+                    // Continuously sync internal coordinates so locking world pos transitions smoothly
+                    pos = targetTransform.position;
+                    rot = targetTransform.eulerAngles;
+                }
+                else
+                {
+                    if (isUnparented && originalParent != null)
+                    {
+                        targetTransform.SetParent(originalParent, true);
+                        isUnparented = false;
+                    }
+
+                    targetTransform.position = pos;
+                    targetTransform.rotation = Quaternion.Euler(rot);
+                }
             }
 
             if (targetCamera != null)
@@ -1612,18 +1682,30 @@ namespace SpectatorTools
             // Scrollable view container
             mainScrollPos = GUILayout.BeginScrollView(mainScrollPos, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
 
-            // Tracking Lock Toggle
+            // Tracking Lock / Follow VR Headset Toggle
             GUILayout.Space(4);
-            bool newLock = GUILayout.Toggle(lockWorldPosition, " <b>Lock World Pos (Static PC Camera - Ignore VR HMD)</b>");
-            if (newLock != lockWorldPosition)
+            GUILayout.BeginVertical("box");
+            bool isFollowVR = !lockWorldPosition;
+            bool newFollowVR = GUILayout.Toggle(isFollowVR, " <b>Follow Main Camera (VR Headset / 1st Person)</b>");
+            if (newFollowVR != isFollowVR)
             {
-                lockWorldPosition = newLock;
+                lockWorldPosition = !newFollowVR;
                 if (lockWorldPosition && targetTransform != null)
                 {
                     pos = targetTransform.position;
                     rot = targetTransform.eulerAngles;
                 }
             }
+
+            if (!lockWorldPosition)
+            {
+                GUILayout.Label("<color=#00FF99>👤 <b>Tracking Player VR Headset in Real-Time (1st Person)</b>\n<i>(WASD / Mouse will switch to free flight in World Space)</i></color>");
+            }
+            else
+            {
+                GUILayout.Label("<color=#FFFF66>🔒 <b>Camera Locked in 3D World Space</b> (WASD + Mouse Flight)</color>");
+            }
+            GUILayout.EndVertical();
 
             // ==========================================
             // 🧱 3D PHYSICAL SCENE OBJECTS & CYCLORAMA (PARALLAX 3D)
