@@ -1,0 +1,78 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v9.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v9.0": {
+      "UnityPatcher/1.0.0": {
+        "dependencies": {
+          "ILRepack": "2.0.46",
+          "ILRepack.Lib": "2.0.46",
+          "Mono.Cecil": "0.11.6"
+        },
+        "runtime": {
+          "UnityPatcher.dll": {}
+        }
+      },
+      "ILRepack/2.0.46": {},
+      "ILRepack.Lib/2.0.46": {
+        "runtime": {
+          "lib/netstandard2.0/ILRepack.dll": {
+            "assemblyVersion": "2.0.46.0",
+            "fileVersion": "2.0.46.0"
+          }
+        }
+      },
+      "Mono.Cecil/0.11.6": {
+        "runtime": {
+          "lib/netstandard2.0/Mono.Cecil.Mdb.dll": {
+            "assemblyVersion": "0.11.6.0",
+            "fileVersion": "0.11.6.0"
+          },
+          "lib/netstandard2.0/Mono.Cecil.Pdb.dll": {
+            "assemblyVersion": "0.11.6.0",
+            "fileVersion": "0.11.6.0"
+          },
+          "lib/netstandard2.0/Mono.Cecil.Rocks.dll": {
+            "assemblyVersion": "0.11.6.0",
+            "fileVersion": "0.11.6.0"
+          },
+          "lib/netstandard2.0/Mono.Cecil.dll": {
+            "assemblyVersion": "0.11.6.0",
+            "fileVersion": "0.11.6.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "UnityPatcher/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "ILRepack/2.0.46": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-A0aJSYJQfbXQXLrKqT4J3FtF9/+y6twMNCGYuzRM8I1C9TutkNkkrlQR/15yUH7Ik3DNiWOJRlsdOkB7H3XK5Q==",
+      "path": "ilrepack/2.0.46",
+      "hashPath": "ilrepack.2.0.46.nupkg.sha512"
+    },
+    "ILRepack.Lib/2.0.46": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-m2Ex+I1dFBi0yPxoC67HbjQO3BwkbsQ3/DsOLYToiRYUUeRP4PTkQK+VvBwBCle/r9NRQ8U6KmyeEPPjyu/thg==",
+      "path": "ilrepack.lib/2.0.46",
+      "hashPath": "ilrepack.lib.2.0.46.nupkg.sha512"
+    },
+    "Mono.Cecil/0.11.6": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-f33RkDtZO8VlGXCtmQIviOtxgnUdym9xx/b1p9h91CRGOsJFxCFOFK1FDbVt1OCf1aWwYejUFa2MOQyFWTFjbA==",
+      "path": "mono.cecil/0.11.6",
+      "hashPath": "mono.cecil.0.11.6.nupkg.sha512"
+    }
+  }
+}
