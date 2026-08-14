@@ -1,6 +1,6 @@
-# 🎥 Unity Spectator Camera & 3D Virtual Studio Suite (v2.8.0)
+# 🎥 Unity Spectator Camera & 3D Virtual Studio Suite (v2.9.0)
 
-[![Release](https://img.shields.io/badge/Release-v2.8.0-brightgreen.svg)](https://github.com/ddavantaj/SpectatorInjectorKit/releases/tag/v2.8.0)
+[![Release](https://img.shields.io/badge/Release-v2.9.0-brightgreen.svg)](https://github.com/ddavantaj/SpectatorInjectorKit/releases/tag/v2.9.0)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Unity%20MR%20%2F%20VR-blue.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)]()
 
@@ -22,7 +22,7 @@ Works as a **1-click standalone injector on any compiled Windows game build** (w
 ## ⚡ Download & Quick Start
 
 ### 📦 1-Click Standalone Injector (No Unity Editor Required)
-1. Download the latest pre-packaged release: **[SpectatorInjectorKit_v2.8.0.zip](https://github.com/ddavantaj/SpectatorInjectorKit/releases/download/v2.8.0/SpectatorInjectorKit_v2.8.0.zip)**.
+1. Download the latest pre-packaged release: **[SpectatorInjectorKit_v2.9.0.zip](https://github.com/ddavantaj/SpectatorInjectorKit/releases/download/v2.9.0/SpectatorInjectorKit_v2.9.0.zip)**.
 2. Extract the ZIP archive anywhere on your PC.
 3. Double-click **`Inject.bat`** (or `InjectSpectatorCamera.exe`).
 4. Select your target game folder when prompted (the folder containing your game `.exe`).
@@ -41,7 +41,7 @@ Works as a **1-click standalone injector on any compiled Windows game build** (w
 | **`F1`** | **Toggle UI** | Show / Hide the Spectator Suite on-screen Control Panel. |
 | **`F9`** | **Take Screenshot** | Capture ultra-crisp PNG screenshot (8x MSAA & Alpha transparency support). |
 | **`F10`** | **Toggle Recording** | Start / Stop 60 FPS MP4 video recording with **1:1 Real-Time Speed Sync**. |
-| **`W / A / S / D`** | **Move Camera** | Fly Forward, Left, Backward, Right in 3D World Space. |
+| **`W / A / S / D`** | **Move Camera** | Fly Forward, Left, Backward, Right in 3D World Space. *(Auto-locks world position)* |
 | **`E / Space`** | **Fly Up** | Elevate camera upwards in World Space. |
 | **`Q / Left Ctrl`** | **Fly Down** | Lower camera downwards in World Space. |
 | **`Left Shift`** | **Speed Boost** | Hold to move 3.5x faster. |
@@ -51,7 +51,16 @@ Works as a **1-click standalone injector on any compiled Windows game build** (w
 
 ## 🌟 Key Features & Capabilities
 
-### 1. 🧱 Physical 3D In-Game Shapes & Virtual Studio (True 3D Parallax)
+### 1. 👤 Real-Time VR Headset Tracking & Free-Fly Mode
+* **`Follow Main Camera (VR Headset / 1st Person)`**:
+  * Seamlessly tracks the player's VR Headset (`CenterEyeAnchor` / `Camera.main`) 1:1 in real time for authentic first-person recording.
+* **`Lock World Position (Static PC Camera)`**:
+  * Unchecking the follow toggle locks the camera at fixed 3D coordinates in world space.
+  * Pressing `WASD` or right-click dragging the mouse instantly engages world space flight without abrupt jumps.
+
+---
+
+### 2. 🧱 Physical 3D In-Game Shapes & Virtual Studio (True 3D Parallax)
 The background is an **actual 3D physical object anchored in the game scene**, providing authentic 3D perspective and depth parallax when the spectator camera moves around the scene.
 
 * **3D Virtual Studio Modes**:
@@ -67,7 +76,7 @@ The background is an **actual 3D physical object anchored in the game scene**, p
 
 ---
 
-### 2. 📸 Ultra-Crisp Screenshots & 🎥 1:1 Real-Time Synced Video Recording
+### 3. 📸 Ultra-Crisp Screenshots & 🎥 1:1 Real-Time Synced Video Recording
 * **Direct Windows Backbuffer Capture**: Reads directly from the resolved Windows monitor frame (`WaitForEndOfFrame`), capturing full anti-aliasing, post-processing, shaders, and game UI.
 * **1:1 Real-Time Video Speed Synchronization**:
   * Calculates exact elapsed real-time (`Time.realtimeSinceStartup`) to feed frame quotas to FFmpeg.
@@ -77,14 +86,14 @@ The background is an **actual 3D physical object anchored in the game scene**, p
 
 ---
 
-### 3. 💾 Camera-Only Presets (P1 – P4)
+### 4. 💾 Camera-Only Presets (P1 – P4)
 * **`Save Cam P1 - P4` / `Load Cam P1 - P4`**:
   * Saves and restores **only the camera properties** (Position, Rotation, FOV, Speed, Lock).
   * 🔒 **Skybox & 3D Backdrop Preservation**: Switching camera presets will **never** alter, reset, or override your loaded 3D environment or cyclorama settings.
 
 ---
 
-### 4. 🔁 Full Automatic Persistence (`SpectatorSettings.ini`)
+### 5. 🔁 Full Automatic Persistence (`SpectatorSettings.ini`)
 * All settings automatically save every 5 seconds, upon closing the application (`OnApplicationQuit`), or by clicking `[ 💾 Save Now ]`.
 * **When reopening the game, everything is automatically restored**:
   1. Exact Camera Position, Rotation, FOV, and Speed.
@@ -96,7 +105,7 @@ The background is an **actual 3D physical object anchored in the game scene**, p
 
 ---
 
-### 5. 💻 Proxima Inspector & In-Game Cheats
+### 6. 💻 Proxima Inspector & In-Game Cheats
 * **Quick Action Cheats**:
   * `Set Level` / `Load Level` / `Load Menu`
   * `Set Coins (set_coins)`

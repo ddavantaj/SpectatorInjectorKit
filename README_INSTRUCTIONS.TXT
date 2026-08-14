@@ -1,5 +1,5 @@
 ================================================================================
-   UNITY SPECTATOR CAMERA & 3D VIRTUAL STUDIO SUITE (v2.8.0)
+   UNITY SPECTATOR CAMERA & 3D VIRTUAL STUDIO SUITE (v2.9.0)
    INSTRUCTION MANUAL / MANUAL DE INSTRUCTIUNI / ИНСТРУКЦИЯ ПО ЭКСПЛУАТАЦИИ
 ================================================================================
 
@@ -31,7 +31,14 @@ LANGUAGES INCLUDED / LIMBI INCLUSE / ВКЛЮЧЕННЫЕ ЯЗЫКИ:
 - Left Shift     : Hold for Fast Speed Boost (3.5x)
 - Right-Click    : Hold & Drag mouse to Look Around / Orbit (Pitch & Yaw)
 
-[ 1.3 3D PHYSICAL IN-GAME OBJECTS & CYCLORAMA (TRUE 3D PARALLAX) ]
+[ 1.3 REAL-TIME VR HEADSET TRACKING & CAMERA MODES ]
+--------------------------------------------------------------------------------
+- [ X ] Follow Main Camera : 1:1 Real-Time tracking of the player's VR Headset
+                             (First-Person perspective view).
+- Lock World Position      : Unchecking follow or pressing WASD / Mouse Drag instantly
+                             anchors the spectator camera at fixed 3D world coordinates.
+
+[ 1.4 3D PHYSICAL IN-GAME OBJECTS & CYCLORAMA (TRUE 3D PARALLAX) ]
 --------------------------------------------------------------------------------
 The background is an actual 3D physical object anchored in the game scene,
 providing true 3D perspective and depth parallax when the camera orbits:
@@ -48,7 +55,7 @@ providing true 3D perspective and depth parallax when the camera orbits:
                            and keeps it fixed in 3D world space.
 - Brightness / Light     : Adjust light exposure from 0.05x to 5.0x.
 
-[ 1.4 SCREENSHOTS & 1:1 REAL-TIME MP4 VIDEO RECORDING ]
+[ 1.5 SCREENSHOTS & 1:1 REAL-TIME MP4 VIDEO RECORDING ]
 --------------------------------------------------------------------------------
 - F9 Screenshot (PNG)   : 8x MSAA edge anti-aliasing. Supports full transparent
                           cutouts (Disable Skybox + Alpha 0).
@@ -59,13 +66,13 @@ providing true 3D perspective and depth parallax when the camera orbits:
 - Asynchronous Engine   : Multi-threaded background streaming to FFmpeg with GPU
                           NVENC H.264 acceleration (CPU libx264 fallback).
 
-[ 1.5 CAMERA-ONLY PRESETS (P1 - P4) ]
+[ 1.6 CAMERA-ONLY PRESETS (P1 - P4) ]
 --------------------------------------------------------------------------------
 - Save Cam P1 - P4 / Load Cam P1 - P4:
   * Saves only Camera Transform (Position, Rotation, FOV, Move Speed, World Lock).
   * Does NOT reset or alter your 3D backdrop, HDRI image, or curvature settings.
 
-[ 1.6 FULL PERSISTENCE ACROSS GAME RESTARTS (SpectatorSettings.ini) ]
+[ 1.7 FULL PERSISTENCE ACROSS GAME RESTARTS (SpectatorSettings.ini) ]
 --------------------------------------------------------------------------------
 - All settings automatically save every 5s, on exit, or via [ 💾 Save Now ].
 - Upon reopening the game, EVERYTHING is automatically restored:
@@ -75,7 +82,7 @@ providing true 3D perspective and depth parallax when the camera orbits:
   * Saved Camera Presets 1-4.
   * Proxima quick inputs (Level, Coins, Lives, Stars).
 
-[ 1.7 PROXIMA DEBUG TERMINAL & IN-GAME CHEATS ]
+[ 1.8 PROXIMA DEBUG TERMINAL & IN-GAME CHEATS ]
 --------------------------------------------------------------------------------
 - One-click buttons for: Set Level, Load Level, Load Menu, Set Coins, Set Lives,
   Set Stars, Win Level, Lose Level, Recenter Area, Reset Tutorials, Clear Save.
@@ -105,7 +112,13 @@ providing true 3D perspective and depth parallax when the camera orbits:
 - Left Shift     : Tineti apasat pentru Viteza Rapida (Boost 3.5x)
 - Click Dreapta  : Tineti apasat si miscati mouse-ul pentru Rotire Camera (Privire 3D)
 
-[ 2.3 FORME 3D IN SCENA & STUDIO CURBAT CYCLORAMA (PARALLAX 3D REAL) ]
+[ 2.3 URMARIRE IN TIMP REAL A CASTII VR & MODURI CAMERA ]
+--------------------------------------------------------------------------------
+- [ X ] Follow Main Camera : Urmarire 1:1 in timp real a castii VR (vedere First-Person).
+- Lock World Position      : Debifarea urmaririi sau apasarea WASD / Mouse blocheaza
+                             camera la coordonate 3D fixe in lume pentru zbor liber.
+
+[ 2.4 FORME 3D IN SCENA & STUDIO CURBAT CYCLORAMA (PARALLAX 3D REAL) ]
 --------------------------------------------------------------------------------
 Fundalul este un obiect 3D fizic real plasat in lumea jocului, creand adancime
 si efect autentic de Parallax 3D cand rotiti camera in jurul scenei:
@@ -122,7 +135,7 @@ si efect autentic de Parallax 3D cand rotiti camera in jurul scenei:
                            curente si o lasa fixata in coordonatele 3D ale lumii.
 - Luminozitate (Light)   : Reglare expunere si intensitate de la 0.05x la 5.0x.
 
-[ 2.4 SCREENSHOTS & INREGISTRARE VIDEO MP4 1:1 IN TIMP REAL ]
+[ 2.5 SCREENSHOTS & INREGISTRARE VIDEO MP4 1:1 IN TIMP REAL ]
 --------------------------------------------------------------------------------
 - Screenshot F9 (PNG)   : Netezire margini cu 8x MSAA. Suporta decupare transparenta
                           (Disable Skybox + Alpha 0).
@@ -133,13 +146,13 @@ si efect autentic de Parallax 3D cand rotiti camera in jurul scenei:
 - Motor Asincron        : Transmisie asincrona spre FFmpeg cu accelerare hardware GPU
                           NVENC H.264 (cu fallback automat pe procesor libx264).
 
-[ 2.5 PRESETURI DOAR PENTRU CAMERA (P1 - P4) ]
+[ 2.6 PRESETURI DOAR PENTRU CAMERA (P1 - P4) ]
 --------------------------------------------------------------------------------
 - Save Cam P1 - P4 / Load Cam P1 - P4:
   * Salveaza si incarca strict parametrii Camerei (Pozitie, Rotatie, FOV, Viteza).
   * NU reseteaza si NU modifica fundalul 3D, imaginea HDRI sau curbura aleasa.
 
-[ 2.6 SALVARE PERSISTENTA TOTALA (SpectatorSettings.ini) ]
+[ 2.7 SALVARE PERSISTENTA TOTALA (SpectatorSettings.ini) ]
 --------------------------------------------------------------------------------
 - Toate setarile se salveaza automat la fiecare 5 secunde, la inchiderea jocului
   sau prin butonul [ 💾 Save Now ].
@@ -150,7 +163,7 @@ si efect autentic de Parallax 3D cand rotiti camera in jurul scenei:
   * Preset-urile de camera 1-4.
   * Valorile tastate in Proxima (Nivel, Bani, Vieti, Stele).
 
-[ 2.7 CONSOLA PROXIMA & TRISURI IN JOC ]
+[ 2.8 CONSOLA PROXIMA & TRISURI IN JOC ]
 --------------------------------------------------------------------------------
 - Butoane rapide: Set Level, Load Level, Load Menu, Set Coins, Set Lives,
   Set Stars, Win Level, Lose Level, Recenter Area, Reset Tutorials, Clear Save.
@@ -180,7 +193,13 @@ si efect autentic de Parallax 3D cand rotiti camera in jurul scenei:
 - Left Shift     : Зажать для ускорения движения (Boost 3.5x)
 - Правая кнопка  : Зажать и двигать мышь для вращения камеры (обзор 3D)
 
-[ 3.3 ФИЗИЧЕСКИЕ 3D ОБЪЕКТЫ В СЦЕНЕ И ИЗОГНУТЫЙ ФОН (НАСТОЯЩИЙ 3D PARALLAX) ]
+[ 3.3 ОТСЛЕЖИВАНИЕ VR ШЛЕМА В РЕАЛЬНОМ ВРЕМЕНИ ]
+--------------------------------------------------------------------------------
+- [ X ] Follow Main Camera : Точное 1:1 отслеживание шлема VR игрока (вид от 1 лица).
+- Lock World Position      : Снятие галочки или нажатие WASD / Mouse блокирует камеру
+                             в фиксированных 3D координатах мира для свободного полета.
+
+[ 3.4 ФИЗИЧЕСКИЕ 3D ОБЪЕКТЫ В СЦЕНЕ И ИЗОГНУТЫЙ ФОН (НАСТОЯЩИЙ 3D PARALLAX) ]
 --------------------------------------------------------------------------------
 Фон является реальным 3D объектом в игровом пространстве, создавая настоящую
 глубину и эффект параллакса при перемещении камеры вокруг игровой сцены:
@@ -197,7 +216,7 @@ si efect autentic de Parallax 3D cand rotiti camera in jurul scenei:
                            и фиксирует её в мировых 3D координатах.
 - Яркость (Light)        : Регулировка яркости и экспозиции от 0.05x до 5.0x.
 
-[ 3.4 СКРИНШОТЫ И ЗАПИСЬ ВИДЕО MP4 1:1 В РЕАЛЬНОМ ВРЕМЕНИ ]
+[ 3.5 СКРИНШОТЫ И ЗАПИСЬ ВИДЕО MP4 1:1 В РЕАЛЬНОМ ВРЕМЕНИ ]
 --------------------------------------------------------------------------------
 - Скриншот F9 (PNG)     : Сглаживание 8x MSAA. Поддерживает прозрачный фон
                           (Disable Skybox + Alpha 0).
@@ -208,13 +227,13 @@ si efect autentic de Parallax 3D cand rotiti camera in jurul scenei:
 - Асинхронный движок    : Фоновый поток отправляет кадры в FFmpeg с GPU аппаратным
                           ускорением NVENC H.264 (с переходом на CPU libx264).
 
-[ 3.5 ПРЕСЕТЫ ТОЛЬКО ДЛЯ КАМЕРЫ (P1 - P4) ]
+[ 3.6 ПРЕСЕТЫ ТОЛЬКО ДЛЯ КАМЕРЫ (P1 - P4) ]
 --------------------------------------------------------------------------------
 - Save Cam P1 - P4 / Load Cam P1 - P4:
   * Сохраняет и загружает исключительно положение камеры (Pos, Rot, FOV, Speed).
   * НЕ сбрасывает и НЕ перезаписывает загруженный 3D фон, HDRI и настройки изгиба.
 
-[ 3.6 ПОЛНОЕ СОХРАНЕНИЕ ВСЕХ НАСТРОЕК (SpectatorSettings.ini) ]
+[ 3.7 ПОЛНОЕ СОХРАНЕНИЕ ВСЕХ НАСТРОЕК (SpectatorSettings.ini) ]
 --------------------------------------------------------------------------------
 - Автосохранение каждые 5 секунд, при выходе из игры или по кнопке [ 💾 Save Now ].
 - При повторном запуске игры ПОЛНОСТЬЮ восстанавливается рабочее состояние:
@@ -224,7 +243,7 @@ si efect autentic de Parallax 3D cand rotiti camera in jurul scenei:
   * Сохраненные пресеты камеры 1-4.
   * Значения в терминале Proxima (Уровень, Монеты, Жизни, Звезды).
 
-[ 3.7 ТЕРМИНАЛ PROXIMA И ЧИТЫ В ИГРЕ ]
+[ 3.8 ТЕРМИНАЛ PROXIMA И ЧИТЫ В ИГРЕ ]
 --------------------------------------------------------------------------------
 - Быстрые кнопки: Set Level, Load Level, Load Menu, Set Coins, Set Lives,
   Set Stars, Win Level, Lose Level, Recenter Area, Reset Tutorials, Clear Save.
