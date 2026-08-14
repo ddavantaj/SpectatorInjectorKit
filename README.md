@@ -1,10 +1,10 @@
-# 🎥 Unity Match-3 MR Spectator Camera & 3D Virtual Studio Suite (v2.8.0)
+# 🎥 Unity Spectator Camera & 3D Virtual Studio Suite (v2.8.0)
 
 [![Release](https://img.shields.io/badge/Release-v2.8.0-brightgreen.svg)](https://github.com/ddavantaj/SpectatorInjectorKit/releases/tag/v2.8.0)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Unity%20MR%20%2F%20VR-blue.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)]()
 
-A high-performance, standalone Spectator Camera, 3D Virtual Studio Set, and Screen Capture Suite designed for Unity Mixed Reality (MR / OpenXR) Windows builds.
+A high-performance, standalone Spectator Camera, 3D Virtual Studio Set, and Screen Capture Suite designed for Unity Mixed Reality (MR / VR / OpenXR) Windows builds.
 
 Works as a **1-click standalone injector on any compiled Windows game build** (without needing Unity Editor or project rebuilding) or as a native Unity C# script component.
 
@@ -16,7 +16,7 @@ Works as a **1-click standalone injector on any compiled Windows game build** (w
 1. Download the latest pre-packaged release: **[SpectatorInjectorKit_v2.8.0.zip](https://github.com/ddavantaj/SpectatorInjectorKit/releases/download/v2.8.0/SpectatorInjectorKit_v2.8.0.zip)**.
 2. Extract the ZIP archive anywhere on your PC.
 3. Double-click **`Inject.bat`** (or `InjectSpectatorCamera.exe`).
-4. Select your target game folder when prompted (the folder containing `Match3MR.exe` or your game `.exe`).
+4. Select your target game folder when prompted (the folder containing your game `.exe`).
 5. Launch the game executable. The Spectator Camera and Control Panel will appear automatically on your screen!
 
 ### 🛠️ Unity Project Integration
@@ -43,7 +43,7 @@ Works as a **1-click standalone injector on any compiled Windows game build** (w
 ## 🌟 Key Features & Capabilities
 
 ### 1. 🧱 Physical 3D In-Game Shapes & Virtual Studio (True 3D Parallax)
-The background is an **actual 3D physical object anchored in the game scene**, providing authentic 3D perspective and depth parallax when the spectator camera moves around the game board.
+The background is an **actual 3D physical object anchored in the game scene**, providing authentic 3D perspective and depth parallax when the spectator camera moves around the scene.
 
 * **3D Virtual Studio Modes**:
   * 🖼️ **`Curved Studio Backdrop (Cyclorama)`**:

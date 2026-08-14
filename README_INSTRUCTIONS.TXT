@@ -1,5 +1,5 @@
 ================================================================================
-   UNITY MATCH-3 MR SPECTATOR CAMERA & 3D CAPTURE SUITE (v2.8.0)
+   UNITY SPECTATOR CAMERA & 3D VIRTUAL STUDIO SUITE (v2.8.0)
    INSTRUCTION MANUAL / MANUAL DE INSTRUCTIUNI / ИНСТРУКЦИЯ ПО ЭКСПЛУАТАЦИИ
 ================================================================================
 
@@ -15,7 +15,7 @@ LANGUAGES INCLUDED / LIMBI INCLUSE / ВКЛЮЧЕННЫЕ ЯЗЫКИ:
 [ 1.1 QUICK INSTALLATION (1-CLICK INJECTOR) ]
 --------------------------------------------------------------------------------
 1. Open the SpectatorInjectorKit folder.
-2. Double-click "InjectSpectatorCamera.bat" (or "InjectSpectatorCamera.exe").
+2. Double-click "Inject.bat" (or "InjectSpectatorCamera.exe").
 3. Select your game build directory when prompted (where the .exe is located).
 4. The patcher automatically injects "SpectatorPlugin.dll" and bundles "ffmpeg.exe".
 5. Launch your game executable. The Spectator overlay will appear automatically.
@@ -89,7 +89,7 @@ providing true 3D perspective and depth parallax when the camera orbits:
 [ 2.1 INSTALARE RAPIDA (INJECTOR CU 1-CLICK) ]
 --------------------------------------------------------------------------------
 1. Deschideti folderul SpectatorInjectorKit.
-2. Dati dublu-click pe "InjectSpectatorCamera.bat" (sau "InjectSpectatorCamera.exe").
+2. Dati dublu-click pe "Inject.bat" (sau "InjectSpectatorCamera.exe").
 3. Selectati folderul jocului cand vi se cere (unde se afla fisierul .exe al jocului).
 4. Injectorul copiaza automat "SpectatorPlugin.dll" si include "ffmpeg.exe".
 5. Porniti jocul. Meniul Spectator va aparea automat pe ecran.
@@ -108,7 +108,7 @@ providing true 3D perspective and depth parallax when the camera orbits:
 [ 2.3 FORME 3D IN SCENA & STUDIO CURBAT CYCLORAMA (PARALLAX 3D REAL) ]
 --------------------------------------------------------------------------------
 Fundalul este un obiect 3D fizic real plasat in lumea jocului, creand adancime
-si efect autentic de Parallax 3D cand rotiti camera in jurul tablei de joc:
+si efect autentic de Parallax 3D cand rotiti camera in jurul scenei:
 - [ 🖼️ Curved Backdrop ] : Perete 3D Curbat de Studio (Cyclorama).
   * Bend Sides (Wrap X)  : Curbeaza lateralele (0° Plat -> 110° Studio -> 240° Imbracare).
   * Bend Top/Bottom (Y)  : Curbeaza sus si jos (0° Plat -> 120° Cupola/Bol 3D).
@@ -164,7 +164,7 @@ si efect autentic de Parallax 3D cand rotiti camera in jurul tablei de joc:
 [ 3.1 БЫСТРАЯ УСТАНОВКА (ИНЖЕКТОР В 1 КЛИК) ]
 --------------------------------------------------------------------------------
 1. Откройте папку SpectatorInjectorKit.
-2. Запустите файл "InjectSpectatorCamera.bat" (или "InjectSpectatorCamera.exe").
+2. Запустите файл "Inject.bat" (или "InjectSpectatorCamera.exe").
 3. При запросе укажите папку с собранной игрой (где находится исполняемый файл .exe).
 4. Инжектор автоматически установит "SpectatorPlugin.dll" и подключит "ffmpeg.exe".
 5. Запустите игру. Панель камеры появится автоматически.
@@ -183,7 +183,7 @@ si efect autentic de Parallax 3D cand rotiti camera in jurul tablei de joc:
 [ 3.3 ФИЗИЧЕСКИЕ 3D ОБЪЕКТЫ В СЦЕНЕ И ИЗОГНУТЫЙ ФОН (НАСТОЯЩИЙ 3D PARALLAX) ]
 --------------------------------------------------------------------------------
 Фон является реальным 3D объектом в игровом пространстве, создавая настоящую
-глубину и эффект параллакса при перемещении камеры вокруг игрового поля:
+глубину и эффект параллакса при перемещении камеры вокруг игровой сцены:
 - [ 🖼️ Curved Backdrop ] : Изогнутый 3D студийный фон (Циклорама).
   * Bend Sides (Wrap X)  : Изгиб по бокам (0° плоский -> 110° студия -> 240° полусфера).
   * Bend Top/Bottom (Y)  : Изгиб сверху и снизу (0° плоский -> 120° купол/чаша).
