@@ -1,5 +1,5 @@
 ================================================================================
-   UNITY SPECTATOR CAMERA & 3D VIRTUAL STUDIO SUITE (v3.0.0)
+   UNITY SPECTATOR CAMERA & 3D VIRTUAL STUDIO SUITE (v3.1.0)
    INSTRUCTION MANUAL / MANUAL DE INSTRUCTIUNI / ИНСТРУКЦИЯ ПО ЭКСПЛУАТАЦИИ
 ================================================================================
 
@@ -24,7 +24,7 @@ LANGUAGES INCLUDED / LIMBI INCLUSE / ВКЛЮЧЕННЫЕ ЯЗЫКИ:
 --------------------------------------------------------------------------------
 - F1             : Toggle Spectator UI on / off
 - F9             : Capture Screenshot (Alpha PNG / 8x MSAA)
-- F10            : Toggle Screen Recording (Zero-Lag 60 FPS MP4, 1:1 Real-Time)
+- F10            : Toggle Screen Recording (Zero-Lag 60 FPS MP4 + In-Game Audio, 1:1 Real-Time)
 - W / A / S / D  : Move Camera Forward / Left / Backward / Right in World Space
 - E / Space      : Fly Upwards in World Space
 - Q / Left Ctrl  : Fly Downwards in World Space
@@ -66,7 +66,7 @@ The control panel is organized into 7 collapsible sections with live badges:
 --------------------------------------------------------------------------------
 - F1             : Ascunde / Afișează panoul de control
 - F9             : Screenshot PNG ultra-clar (cu suport pentru fundal transparent)
-- F10            : Pornește / Oprește înregistrarea video MP4 la 60 FPS (Fără Lag)
+- F10            : Pornește / Oprește înregistrarea video MP4 la 60 FPS cu Sunet Joc (Fără Lag)
 - W / A / S / D  : Zbor Cameră: Înainte / Stânga / Înapoi / Dreapta
 - E / Space      : Ridicare pe verticală
 - Q / Left Ctrl  : Coborâre pe verticală
@@ -107,7 +107,7 @@ Panoul conține 7 secțiuni pliabile pentru o utilizare clară și aerisită:
 --------------------------------------------------------------------------------
 - F1             : Скрыть / Показать панель управления
 - F9             : Сделать скриншот PNG (с поддержкой прозрачности Alpha)
-- F10            : Старт / Стоп записи видео MP4 60 FPS (Без лагов)
+- F10            : Старт / Стоп записи видео MP4 60 FPS со звуком игры (Без лагов)
 - W / A / S / D  : Перемещение камеры в 3D пространстве
 - E / Пробел     : Подняться вверх
 - Q / Left Ctrl  : Опуститься вниз

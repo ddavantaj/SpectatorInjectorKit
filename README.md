@@ -1,6 +1,6 @@
-# 🎥 Unity Spectator Camera & 3D Virtual Studio Suite (v3.0.1)
+# 🎥 Unity Spectator Camera & 3D Virtual Studio Suite (v3.1.0)
 
-[![Release](https://img.shields.io/badge/Release-v3.0.1-brightgreen.svg)](https://github.com/ddavantaj/SpectatorInjectorKit/releases/tag/v3.0.1)
+[![Release](https://img.shields.io/badge/Release-v3.1.0-brightgreen.svg)](https://github.com/ddavantaj/SpectatorInjectorKit/releases/tag/v3.1.0)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Unity%20MR%20%2F%20VR-blue.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)]()
 
@@ -22,7 +22,7 @@ Works as a **1-click standalone injector on any compiled Windows game build** (w
 ## ⚡ Download & Quick Start
 
 ### 📦 1-Click Standalone Injector (No Unity Editor Required)
-1. Download the latest pre-packaged release: **[SpectatorInjectorKit_v3.0.1.zip](https://github.com/ddavantaj/SpectatorInjectorKit/releases/download/v3.0.1/SpectatorInjectorKit_v3.0.1.zip)**.
+1. Download the latest pre-packaged release: **[SpectatorInjectorKit_v3.1.0.zip](https://github.com/ddavantaj/SpectatorInjectorKit/releases/download/v3.1.0/SpectatorInjectorKit_v3.1.0.zip)**.
 2. Extract the ZIP archive anywhere on your PC.
 3. Double-click **`Inject.bat`** (or `InjectSpectatorCamera.exe`).
 4. Select your target game folder when prompted (the folder containing your game `.exe`).
@@ -40,7 +40,7 @@ Works as a **1-click standalone injector on any compiled Windows game build** (w
 | :--- | :--- | :--- |
 | **`F1`** | **Toggle UI** | Show / Hide the Spectator Suite on-screen Control Panel. |
 | **`F9`** | **Take Screenshot** | Capture ultra-crisp PNG screenshot (8x MSAA & Alpha transparency support). |
-| **`F10`** | **Toggle Recording** | Start / Stop 60 FPS MP4 video recording with **1:1 Real-Time Speed Sync**. |
+| **`F10`** | **Toggle Recording** | Start / Stop 60 FPS MP4 video recording with **synchronized in-game audio** & **1:1 Real-Time Speed Sync**. |
 | **`W / A / S / D`** | **Move Camera** | Fly Forward, Left, Backward, Right in 3D World Space. *(Auto-locks world position)* |
 | **`E / Space`** | **Fly Up** | Elevate camera upwards in World Space. |
 | **`Q / Left Ctrl`** | **Fly Down** | Lower camera downwards in World Space. |
@@ -49,11 +49,11 @@ Works as a **1-click standalone injector on any compiled Windows game build** (w
 
 ---
 
-## 🌟 Key Features & Capabilities (v3.0.0)
+## 🌟 Key Features & Capabilities (v3.1.0)
 
 ### 1. 🗂️ Categorized Accordion Control Panel
 * Clean, categorized layout with 7 collapsible foldout boxes (`[ ▲ Hide / ▼ Open ]`) and live status badges:
-  1. **🎥 1. Video Setup & Stabilization** `[ 1080p @ 60 FPS | 🎬 Steadicam ON ]`
+  1. **🎥 1. Video Setup & Stabilization** `[ 1080p @ 60 FPS | 🎬 Steadicam ON | 🔊 Audio ON ]`
   2. **👤 2. VR Tracking & Free-Flight** `[ Following VR / Locked ]`
   3. **🎥 3. Camera Position, Rotation & FOV** `[ FOV: 60° ]`
   4. **💾 4. Camera Presets** `[ 4 Slots Saved/Empty ]`
@@ -63,7 +63,11 @@ Works as a **1-click standalone injector on any compiled Windows game build** (w
 
 ---
 
-### 2. 🎬 High-Performance Zero-Lag 60 FPS Video Recording & Steadicam Stabilization
+### 2. 🎬 High-Performance Zero-Lag 60 FPS Video & Audio Recording Suite
+* **🔊 In-Game Master Audio Recording**:
+  * Native DSP capture directly from Unity's master `AudioListener` (`OnAudioFilterRead`).
+  * Pure 16-bit stereo PCM capture with zero background noise and crystal-clear game sound.
+  * Encoded via FFmpeg into high-fidelity AAC (192 kbps) without affecting video latency.
 * **Zero-GC Buffer Recycling Engine**: Pre-allocated frame buffer pool recycling memory with **0 MB/s GC allocation**, eliminating recording micro-stutters.
 * **Cinematic Video Stabilization (Steadicam / Gimbal Damping)**:
   * Dynamic real-time spherical interpolation (`Vector3.Lerp` / `Quaternion.Slerp`).

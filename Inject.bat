@@ -1,10 +1,10 @@
 @echo off
 chcp 65001 >nul
-title 🎥 MATCH3 MR - SPECTATOR CAMERA INJECTOR KIT
+title 🎥 SPECTATOR CAMERA & 3D STUDIO INJECTOR (v3.1.0)
 cd /d "%~dp0"
 
 echo ==================================================================
-echo   🎥 UNITY MATCH3 MR - SPECTATOR CAMERA ^& PROXIMA INJECTOR
+echo   🎥 UNITY SPECTATOR CAMERA & 3D VIRTUAL STUDIO SUITE (v3.1.0)
 echo ==================================================================
 echo.
 

@@ -14,9 +14,20 @@ using Debug = UnityEngine.Debug;
 
 namespace SpectatorTools
 {
+    public class SpectatorAudioListenerHook : MonoBehaviour
+    {
+        private void OnAudioFilterRead(float[] data, int channels)
+        {
+            if (SpectatorCameraController.Instance != null)
+            {
+                SpectatorCameraController.Instance.OnAudioFilterReadInternal(data, channels);
+            }
+        }
+    }
+
     public class SpectatorCameraController : MonoBehaviour
     {
-        public const string VERSION = "v3.0.1";
+        public const string VERSION = "v3.1.0";
         public static SpectatorCameraController Instance { get; private set; }
 
         private Transform targetTransform;
@@ -129,6 +140,25 @@ namespace SpectatorTools
         private float captureBannerTimer = 0f;
         private bool takeScreenshotOnNextFrame = false;
 
+        // Audio Recording & Synchronization Engine (Zero-GC)
+        private bool recordAudio = true;
+        private int audioSampleRate = 48000;
+        private int audioChannels = 2;
+        private string tempVideoPath = "";
+        private string tempAudioPath = "";
+        private Thread audioWriterThread = null;
+        private bool stopAudioThread = false;
+        private BlockingCollection<AudioChunk> audioQueue = null;
+        private ConcurrentQueue<byte[]> audioBufferPool = new ConcurrentQueue<byte[]>();
+        private long totalAudioBytesRecorded = 0;
+        private float lastAudioHookCheckTime = 0f;
+
+        private struct AudioChunk
+        {
+            public byte[] buffer;
+            public int length;
+        }
+
         // UI Categorized Foldout Sections
         private bool showSectionVideo = false;
         private bool showSectionTracking = true;
@@ -178,6 +208,7 @@ namespace SpectatorTools
         private void Start()
         {
             FindTargetCamera();
+            EnsureAudioListenerHook();
             StartCoroutine(CaptureRecordCoroutine());
         }
 
@@ -206,6 +237,13 @@ namespace SpectatorTools
             {
                 lastAutoSaveTime = Time.time;
                 SaveAllPersistentSettings();
+            }
+
+            // Check & ensure audio hook is attached to active AudioListener periodically
+            if (Time.time - lastAudioHookCheckTime > 2.5f)
+            {
+                lastAudioHookCheckTime = Time.time;
+                EnsureAudioListenerHook();
             }
 
             if (targetTransform == null)
@@ -573,6 +611,7 @@ namespace SpectatorTools
                 sb.AppendLine($"videoQuality={(int)videoQuality}");
                 sb.AppendLine($"enableStabilization={enableStabilization}");
                 sb.AppendLine($"stabilizationSmoothness={stabilizationSmoothness.ToString("R", CultureInfo.InvariantCulture)}");
+                sb.AppendLine($"recordAudio={recordAudio}");
 
                 string content = sb.ToString();
                 File.WriteAllText(GetSettingsFilePath(), content);
@@ -662,6 +701,7 @@ namespace SpectatorTools
                 if (dict.TryGetValue("videoQuality", out s) && int.TryParse(s, out iVal)) videoQuality = (VideoQualityMode)iVal;
                 if (dict.TryGetValue("enableStabilization", out s) && bool.TryParse(s, out bVal)) enableStabilization = bVal;
                 if (dict.TryGetValue("stabilizationSmoothness", out s) && float.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out fVal)) stabilizationSmoothness = Mathf.Clamp(fVal, 1.0f, 30.0f);
+                if (dict.TryGetValue("recordAudio", out s) && bool.TryParse(s, out bVal)) recordAudio = bVal;
 
                 if (dict.TryGetValue("shapeImagePath", out s) && !string.IsNullOrEmpty(s) && File.Exists(s))
                 {
@@ -1450,6 +1490,183 @@ namespace SpectatorTools
             return "ffmpeg.exe";
         }
 
+        public void EnsureAudioListenerHook()
+        {
+            try
+            {
+                // 1. Purge any rogue AudioListener accidentally attached to Spectator Camera or self
+                if (targetCamera != null && targetCamera.gameObject != null)
+                {
+                    var extraListeners = targetCamera.gameObject.GetComponents<AudioListener>();
+                    if (extraListeners != null)
+                    {
+                        foreach (var el in extraListeners)
+                        {
+                            if (el != null)
+                            {
+                                el.enabled = false;
+                                Destroy(el);
+                            }
+                        }
+                    }
+                }
+
+                var selfListeners = gameObject.GetComponents<AudioListener>();
+                if (selfListeners != null)
+                {
+                    foreach (var sl in selfListeners)
+                    {
+                        if (sl != null)
+                        {
+                            sl.enabled = false;
+                            Destroy(sl);
+                        }
+                    }
+                }
+
+                // 2. Discover active AudioListeners in the scene and resolve the primary one
+                var allListeners = FindObjectsOfType<AudioListener>();
+                AudioListener primaryListener = null;
+
+                if (allListeners != null && allListeners.Length > 0)
+                {
+                    foreach (var l in allListeners)
+                    {
+                        if (l == null) continue;
+
+                        // Never use listener on spectator rig
+                        if (targetTransform != null && (l.transform == targetTransform || l.transform.IsChildOf(targetTransform)))
+                        {
+                            l.enabled = false;
+                            Destroy(l);
+                            continue;
+                        }
+                        if (l.gameObject == gameObject)
+                        {
+                            l.enabled = false;
+                            Destroy(l);
+                            continue;
+                        }
+
+                        // Determine primary listener (prioritize VR headset CenterEyeAnchor or MainCamera)
+                        if (primaryListener == null)
+                        {
+                            primaryListener = l;
+                        }
+                        else if (l.gameObject.name.IndexOf("CenterEye", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                 l.gameObject.CompareTag("MainCamera") ||
+                                 (Camera.main != null && l.gameObject == Camera.main.gameObject))
+                        {
+                            primaryListener.enabled = false;
+                            primaryListener = l;
+                        }
+                        else
+                        {
+                            // Unity strictly allows only 1 active AudioListener.
+                            // Disable any extra scene listener so real-time audio is NEVER muted!
+                            l.enabled = false;
+                        }
+                    }
+                }
+
+                // 3. Attach hook exclusively to the single primary listener
+                if (primaryListener != null)
+                {
+                    primaryListener.enabled = true;
+                    if (primaryListener.gameObject.GetComponent<SpectatorAudioListenerHook>() == null)
+                    {
+                        primaryListener.gameObject.AddComponent<SpectatorAudioListenerHook>();
+                    }
+                }
+
+                // 4. Ensure master audio is unmuted and playing normally in real-time
+                AudioListener.pause = false;
+                if (AudioListener.volume < 0.05f)
+                {
+                    AudioListener.volume = 1.0f;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[SpectatorCameraController] EnsureAudioListenerHook exception: {ex.Message}");
+            }
+        }
+
+        public void OnAudioFilterReadInternal(float[] data, int channels)
+        {
+            if (!isRecording || !recordAudio || data == null || data.Length == 0) return;
+
+            if (channels > 0) audioChannels = channels;
+
+            int sampleCount = data.Length;
+            int byteCount = sampleCount * 2; // 16-bit PCM (2 bytes per sample)
+
+            byte[] buf = null;
+            if (audioBufferPool == null || !audioBufferPool.TryDequeue(out buf) || buf.Length < byteCount)
+            {
+                buf = new byte[Math.Max(byteCount, 8192)];
+            }
+
+            int byteIdx = 0;
+            for (int i = 0; i < sampleCount; i++)
+            {
+                float sample = data[i];
+                if (sample > 1.0f) sample = 1.0f;
+                else if (sample < -1.0f) sample = -1.0f;
+                short s = (short)(sample * 32767f);
+                buf[byteIdx++] = (byte)(s & 0xFF);
+                buf[byteIdx++] = (byte)((s >> 8) & 0xFF);
+            }
+
+            if (audioQueue != null && !audioQueue.IsAddingCompleted)
+            {
+                if (!audioQueue.TryAdd(new AudioChunk { buffer = buf, length = byteCount }))
+                {
+                    if (audioBufferPool != null) audioBufferPool.Enqueue(buf);
+                }
+            }
+            else
+            {
+                if (audioBufferPool != null) audioBufferPool.Enqueue(buf);
+            }
+        }
+
+        private void WriteWavHeader(BinaryWriter bw, long dataLength, int sampleRate, int channels)
+        {
+            try
+            {
+                long fileLength = dataLength + 36;
+                short bitsPerSample = 16;
+                int byteRate = sampleRate * channels * (bitsPerSample / 8);
+                short blockAlign = (short)(channels * (bitsPerSample / 8));
+
+                bw.BaseStream.Seek(0, SeekOrigin.Begin);
+                // RIFF chunk
+                bw.Write(new char[] { 'R', 'I', 'F', 'F' });
+                bw.Write((int)fileLength);
+                bw.Write(new char[] { 'W', 'A', 'V', 'E' });
+
+                // fmt subchunk
+                bw.Write(new char[] { 'f', 'm', 't', ' ' });
+                bw.Write(16); // Subchunk1Size for PCM
+                bw.Write((short)1); // AudioFormat = 1 (PCM)
+                bw.Write((short)channels);
+                bw.Write(sampleRate);
+                bw.Write(byteRate);
+                bw.Write(blockAlign);
+                bw.Write(bitsPerSample);
+
+                // data subchunk
+                bw.Write(new char[] { 'd', 'a', 't', 'a' });
+                bw.Write((int)dataLength);
+                bw.Flush();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[SpectatorCameraController] WriteWavHeader error: {ex.Message}");
+            }
+        }
+
         public void StartRecordingMP4()
         {
             if (isRecording) return;
@@ -1464,8 +1681,14 @@ namespace SpectatorTools
                 if (recordWidth % 2 != 0) recordWidth--;
                 if (recordHeight % 2 != 0) recordHeight--;
 
-                string fileName = $"Recording_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.mp4";
-                currentVideoPath = Path.Combine(GetVideosFolder(), fileName);
+                string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+                string finalFileName = $"Recording_{timestamp}.mp4";
+                currentVideoPath = Path.Combine(GetVideosFolder(), finalFileName);
+
+                string tempSuffix = $"{timestamp}_{Guid.NewGuid().ToString().Substring(0, 6)}";
+                tempVideoPath = Path.Combine(GetVideosFolder(), $"temp_video_{tempSuffix}.mp4");
+                tempAudioPath = Path.Combine(GetVideosFolder(), $"temp_audio_{tempSuffix}.wav");
+
                 string ffmpegPath = FindFFmpegPath();
 
                 // Build video filter: vflip (inverts bottom-up backbuffer to top-down video) + optional GPU scaling
@@ -1508,7 +1731,7 @@ namespace SpectatorTools
                 }
 
                 // Hardware NVENC uses -tune ull, CPU libx264 uses -tune zerolatency
-                string args = $"-y -f rawvideo -vcodec rawvideo -s {recordWidth}x{recordHeight} -pix_fmt rgb24 -r {targetRecordFPS} -i - -vf \"{vf}\" -c:v h264_nvenc -preset {nvencPreset} -tune ull -cq {nvencCQ} -pix_fmt yuv420p -movflags +faststart \"{currentVideoPath}\"";
+                string args = $"-y -f rawvideo -vcodec rawvideo -s {recordWidth}x{recordHeight} -pix_fmt rgb24 -r {targetRecordFPS} -i - -vf \"{vf}\" -c:v h264_nvenc -preset {nvencPreset} -tune ull -cq {nvencCQ} -pix_fmt yuv420p -movflags +faststart \"{tempVideoPath}\"";
 
                 ProcessStartInfo psi = new ProcessStartInfo
                 {
@@ -1532,7 +1755,7 @@ namespace SpectatorTools
                 catch
                 {
                     // Fallback to CPU libx264 ultrafast if NVENC not initialized
-                    args = $"-y -f rawvideo -vcodec rawvideo -s {recordWidth}x{recordHeight} -pix_fmt rgb24 -r {targetRecordFPS} -i - -vf \"{vf}\" -c:v libx264 -preset {x264Preset} -tune zerolatency -crf {x264CRF} -pix_fmt yuv420p -movflags +faststart \"{currentVideoPath}\"";
+                    args = $"-y -f rawvideo -vcodec rawvideo -s {recordWidth}x{recordHeight} -pix_fmt rgb24 -r {targetRecordFPS} -i - -vf \"{vf}\" -c:v libx264 -preset {x264Preset} -tune zerolatency -crf {x264CRF} -pix_fmt yuv420p -movflags +faststart \"{tempVideoPath}\"";
                     psi.Arguments = args;
                     ffmpegProcess = Process.Start(psi);
                 }
@@ -1585,13 +1808,87 @@ namespace SpectatorTools
                 };
                 encodingThread.Start();
 
+                // Setup Audio Recording
+                EnsureAudioListenerHook();
+                try
+                {
+                    audioSampleRate = AudioSettings.outputSampleRate > 0 ? AudioSettings.outputSampleRate : 48000;
+                }
+                catch
+                {
+                    audioSampleRate = 48000;
+                }
+
+                totalAudioBytesRecorded = 0;
+                if (recordAudio)
+                {
+                    audioBufferPool = new ConcurrentQueue<byte[]>();
+                    for (int i = 0; i < 40; i++)
+                    {
+                        audioBufferPool.Enqueue(new byte[16384]);
+                    }
+
+                    audioQueue = new BlockingCollection<AudioChunk>(boundedCapacity: 100);
+                    stopAudioThread = false;
+
+                    audioWriterThread = new Thread(() =>
+                    {
+                        FileStream fs = null;
+                        BinaryWriter bw = null;
+                        try
+                        {
+                            fs = new FileStream(tempAudioPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, 65536);
+                            bw = new BinaryWriter(fs);
+
+                            // Reserve 44 bytes for WAV header
+                            byte[] headerPlaceholder = new byte[44];
+                            bw.Write(headerPlaceholder);
+
+                            while (!stopAudioThread || (audioQueue != null && audioQueue.Count > 0))
+                            {
+                                if (audioQueue != null && audioQueue.TryTake(out AudioChunk chunk, 40))
+                                {
+                                    try
+                                    {
+                                        bw.Write(chunk.buffer, 0, chunk.length);
+                                        totalAudioBytesRecorded += chunk.length;
+                                    }
+                                    finally
+                                    {
+                                        if (audioBufferPool != null) audioBufferPool.Enqueue(chunk.buffer);
+                                    }
+                                }
+                            }
+
+                            // Write final WAV header
+                            WriteWavHeader(bw, totalAudioBytesRecorded, audioSampleRate, audioChannels);
+                            bw.Flush();
+                        }
+                        catch (Exception aEx)
+                        {
+                            Debug.LogWarning($"[SpectatorCameraController] Audio writer thread exception: {aEx.Message}");
+                        }
+                        finally
+                        {
+                            try { bw?.Close(); } catch { }
+                            try { fs?.Close(); } catch { }
+                        }
+                    })
+                    {
+                        IsBackground = true,
+                        Priority = System.Threading.ThreadPriority.BelowNormal
+                    };
+                    audioWriterThread.Start();
+                }
+
                 isRecording = true;
                 recordingRealStartTime = Time.realtimeSinceStartup;
                 recordedFramesCount = 0;
 
                 string modeLabel = videoResMode == VideoResMode.FullHD_1080p ? "1080p" : (videoResMode == VideoResMode.HD_720p ? "720p" : "Native");
-                terminalLog += $"\n[REC] Started Full-Frame Recording ({modeLabel} @ {targetRecordFPS} FPS): {fileName}";
-                ShowNotice($"🔴 Înregistrare MP4: {modeLabel} ({targetRecordFPS} FPS)");
+                string audioLabel = recordAudio ? " + Audio" : "";
+                terminalLog += $"\n[REC] Started Full-Frame Recording ({modeLabel} @ {targetRecordFPS} FPS{audioLabel}): {finalFileName}";
+                ShowNotice($"🔴 Înregistrare MP4: {modeLabel} ({targetRecordFPS} FPS{audioLabel})");
             }
             catch (Exception ex)
             {
@@ -1608,6 +1905,7 @@ namespace SpectatorTools
             {
                 isRecording = false;
                 stopEncodingThread = true;
+                stopAudioThread = true;
 
                 if (frameQueue != null)
                 {
@@ -1616,7 +1914,7 @@ namespace SpectatorTools
 
                 if (encodingThread != null && encodingThread.IsAlive)
                 {
-                    encodingThread.Join(2000);
+                    encodingThread.Join(2500);
                 }
 
                 if (ffmpegStdin != null)
@@ -1633,8 +1931,66 @@ namespace SpectatorTools
                     ffmpegProcess = null;
                 }
 
-                terminalLog += $"\n[REC SUCCESS] Video Saved: {Path.GetFileName(currentVideoPath)}";
-                ShowNotice($"🎬 Video MP4 Salvat cu succes!");
+                // Finish Audio Thread
+                if (audioQueue != null)
+                {
+                    try { audioQueue.CompleteAdding(); } catch { }
+                }
+
+                if (audioWriterThread != null && audioWriterThread.IsAlive)
+                {
+                    audioWriterThread.Join(2500);
+                }
+
+                // Check if audio was recorded and mux with video
+                bool hasAudio = recordAudio && File.Exists(tempAudioPath) && totalAudioBytesRecorded > 0;
+                string ffmpegPath = FindFFmpegPath();
+
+                if (hasAudio && File.Exists(tempVideoPath))
+                {
+                    try
+                    {
+                        // Ultra-fast stream copy for video (-c:v copy) + high quality AAC audio (-c:a aac -b:a 192k)
+                        string muxArgs = $"-y -i \"{tempVideoPath}\" -i \"{tempAudioPath}\" -c:v copy -c:a aac -b:a 192k -ac 2 -shortest -movflags +faststart \"{currentVideoPath}\"";
+                        ProcessStartInfo muxPsi = new ProcessStartInfo
+                        {
+                            FileName = ffmpegPath,
+                            Arguments = muxArgs,
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        };
+
+                        using (var muxProc = Process.Start(muxPsi))
+                        {
+                            muxProc.WaitForExit(10000);
+                        }
+
+                        if (File.Exists(currentVideoPath) && new FileInfo(currentVideoPath).Length > 0)
+                        {
+                            try { File.Delete(tempVideoPath); } catch { }
+                            try { File.Delete(tempAudioPath); } catch { }
+
+                            terminalLog += $"\n[REC SUCCESS] Video with Audio Saved: {Path.GetFileName(currentVideoPath)}";
+                            ShowNotice($"🎬 Video MP4 cu Sunet Salvat!");
+                            return;
+                        }
+                    }
+                    catch (Exception mEx)
+                    {
+                        terminalLog += $"\n[MUX WARNING] Muxing audio failed ({mEx.Message}). Preserving video.";
+                    }
+                }
+
+                // Fallback: move temp video to final destination
+                if (File.Exists(tempVideoPath))
+                {
+                    if (File.Exists(currentVideoPath)) File.Delete(currentVideoPath);
+                    File.Move(tempVideoPath, currentVideoPath);
+                    try { if (File.Exists(tempAudioPath)) File.Delete(tempAudioPath); } catch { }
+
+                    terminalLog += $"\n[REC SUCCESS] Video Saved: {Path.GetFileName(currentVideoPath)}";
+                    ShowNotice($"🎬 Video MP4 Salvat cu succes!");
+                }
             }
             catch (Exception ex)
             {
@@ -1881,8 +2237,9 @@ namespace SpectatorTools
             string resLabel = videoResMode == VideoResMode.FullHD_1080p ? "1080p" : (videoResMode == VideoResMode.HD_720p ? "720p" : "Native");
             string qualLabel = videoQuality == VideoQualityMode.UltraFast_ZeroLag ? "⚡ Zero-Lag" : (videoQuality == VideoQualityMode.Balanced ? "⚖️ Balanced" : "💎 High Quality");
             string stabLabel = enableStabilization ? "🎬 Steadicam ON" : "Off";
+            string audioBadge = recordAudio ? "🔊 Audio ON" : "🔇 Audio OFF";
             GUILayout.BeginHorizontal();
-            GUILayout.Label($"<b>🎥 1. Video Setup & Stabilization</b> <color=#00FF99>[{resLabel} @ {targetRecordFPS} FPS | {stabLabel}]</color>", GUILayout.ExpandWidth(true));
+            GUILayout.Label($"<b>🎥 1. Video Setup & Stabilization</b> <color=#00FF99>[{resLabel} @ {targetRecordFPS} FPS | {stabLabel} | {audioBadge}]</color>", GUILayout.ExpandWidth(true));
             if (GUILayout.Button(showSectionVideo ? "▲ Hide" : "▼ Open", GUILayout.Width(75), GUILayout.Height(20)))
             {
                 showSectionVideo = !showSectionVideo;
@@ -1937,6 +2294,13 @@ namespace SpectatorTools
                     GUILayout.Label("Fast (20.0)", GUILayout.Width(70));
                     GUILayout.EndHorizontal();
                 }
+
+                GUILayout.Space(4);
+                // Audio Recording Section
+                GUILayout.Label("<b>In-Game Audio Recording:</b>");
+                GUILayout.BeginHorizontal();
+                recordAudio = GUILayout.Toggle(recordAudio, " 🔊 Record In-Game Audio (Direct Master Sound)");
+                GUILayout.EndHorizontal();
             }
             GUILayout.EndVertical();
 
