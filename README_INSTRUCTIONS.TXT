@@ -1,5 +1,5 @@
 ================================================================================
-   UNITY SPECTATOR CAMERA & 3D VIRTUAL STUDIO SUITE (v3.1.0)
+   UNITY SPECTATOR CAMERA & 3D VIRTUAL STUDIO SUITE (v3.1.1)
    INSTRUCTION MANUAL / MANUAL DE INSTRUCTIUNI / ИНСТРУКЦИЯ ПО ЭКСПЛУАТАЦИИ
 ================================================================================
 

@@ -27,7 +27,7 @@ namespace SpectatorTools
 
     public class SpectatorCameraController : MonoBehaviour
     {
-        public const string VERSION = "v3.1.0";
+        public const string VERSION = "v3.1.1";
         public static SpectatorCameraController Instance { get; private set; }
 
         private Transform targetTransform;
