@@ -80,6 +80,8 @@ namespace SpectatorTools
         private Vector3 shapeWorldRot = new Vector3(0f, 0f, 0f);
         private Vector3 shapeScale = new Vector3(25f, 15f, 25f);
         private bool isShapePlacedInWorld = false;
+        private bool followFlatWallCamera = false;
+        private const float shapePlacementDistance = 8f;
 
         // Curvature / Bend Sliders
         private float bendSidesAngle = 110f;    // Horizontal curvature (0° Flat to 240° Studio Cyc)
@@ -583,6 +585,7 @@ namespace SpectatorTools
                 sb.AppendLine($"bendTopBottomAngle={bendTopBottomAngle.ToString("R", CultureInfo.InvariantCulture)}");
                 sb.AppendLine($"shapeBrightness={shapeBrightness.ToString("R", CultureInfo.InvariantCulture)}");
                 sb.AppendLine($"isShapePlacedInWorld={isShapePlacedInWorld}");
+                sb.AppendLine($"followFlatWallCamera={followFlatWallCamera}");
 
                 // Presets (Camera Only)
                 for (int i = 0; i < 4; i++)
@@ -676,6 +679,7 @@ namespace SpectatorTools
                 if (dict.TryGetValue("bendTopBottomAngle", out s) && float.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out fVal)) bendTopBottomAngle = fVal;
                 if (dict.TryGetValue("shapeBrightness", out s) && float.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out fVal) && fVal > 0) shapeBrightness = fVal;
                 if (dict.TryGetValue("isShapePlacedInWorld", out s) && bool.TryParse(s, out bVal)) isShapePlacedInWorld = bVal;
+                if (dict.TryGetValue("followFlatWallCamera", out s) && bool.TryParse(s, out bVal)) followFlatWallCamera = bVal;
 
                 for (int i = 0; i < 4; i++)
                 {
@@ -972,12 +976,12 @@ namespace SpectatorTools
 
                     // Inverted winding so triangles face inside towards camera
                     triangles[t++] = current;
-                    triangles[t++] = current + 1;
                     triangles[t++] = next;
+                    triangles[t++] = current + 1;
 
                     triangles[t++] = next;
-                    triangles[t++] = current + 1;
                     triangles[t++] = next + 1;
+                    triangles[t++] = current + 1;
                 }
             }
 
@@ -1003,6 +1007,16 @@ namespace SpectatorTools
                 if (shapeMaterial.HasProperty("_BaseColor")) shapeMaterial.SetColor("_BaseColor", tint);
             }
 
+            if (currentShape == Shape3DType.FlatWall3D && followFlatWallCamera)
+            {
+                Transform spectatorView = targetCamera != null ? targetCamera.transform : targetTransform;
+                if (spectatorView != null)
+                {
+                    shapeWorldPos = spectatorView.position + spectatorView.forward * shapePlacementDistance;
+                    shapeWorldRot = spectatorView.rotation.eulerAngles;
+                }
+            }
+
             // Fixed in 3D World Space (True 3D Parallax relative to spectator camera & gameboard)
             shapeObject.transform.position = shapeWorldPos;
             shapeObject.transform.rotation = Quaternion.Euler(shapeWorldRot);
@@ -1023,11 +1037,12 @@ namespace SpectatorTools
 
         public void Place3DShapeInFrontOfCamera()
         {
-            if (targetTransform != null)
+            Transform spectatorView = targetCamera != null ? targetCamera.transform : targetTransform;
+            if (spectatorView != null)
             {
-                // Place 3D object 8 meters in front of current camera position in 3D world space
-                shapeWorldPos = targetTransform.position + targetTransform.forward * 8f;
-                shapeWorldRot = new Vector3(0f, targetTransform.eulerAngles.y, 0f);
+                // Align the object with the complete spectator-camera view transform.
+                shapeWorldPos = spectatorView.position + spectatorView.forward * shapePlacementDistance;
+                shapeWorldRot = spectatorView.rotation.eulerAngles;
                 isShapePlacedInWorld = true;
                 terminalLog += $"\n[3D OBJECT] Placed 3D Shape at World Pos: {shapeWorldPos}";
                 ShowNotice("🎯 Obiect 3D Poziționat în Spatele Tablei");
@@ -2601,6 +2616,17 @@ namespace SpectatorTools
                     }
                     GUILayout.EndHorizontal();
 
+                    if (currentShape == Shape3DType.FlatWall3D)
+                    {
+                        bool newFollowFlatWallCamera = GUILayout.Toggle(followFlatWallCamera, " 📌 Follow Spectator Camera (Always in View)");
+                        if (newFollowFlatWallCamera != followFlatWallCamera)
+                        {
+                            followFlatWallCamera = newFollowFlatWallCamera;
+                            if (followFlatWallCamera) Place3DShapeInFrontOfCamera();
+                            SaveAllPersistentSettings();
+                        }
+                    }
+
                     if (currentShape == Shape3DType.CurvedBackdrop3D)
                     {
                         // Curvature Bend Sides (Horizontal)
@@ -2675,6 +2701,13 @@ namespace SpectatorTools
                     GUILayout.Space(4);
                     GUILayout.Label("<b>3D Object World Position & Rotation:</b>");
 
+                    bool worldTransformControlsEnabled = GUI.enabled;
+                    if (currentShape == Shape3DType.FlatWall3D && followFlatWallCamera)
+                    {
+                        GUILayout.Label("<color=#00FF99>Position and rotation follow the spectator camera.</color>");
+                        GUI.enabled = false;
+                    }
+
                     // World Position X
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("Pos X:", GUILayout.Width(45));
@@ -2712,6 +2745,8 @@ namespace SpectatorTools
                     shapeWorldRot.x = GUILayout.HorizontalSlider(shapeWorldRot.x, -90f, 90f);
                     if (GUILayout.Button("0°", GUILayout.Width(30))) shapeWorldRot.x = 0f;
                     GUILayout.EndHorizontal();
+
+                    GUI.enabled = worldTransformControlsEnabled;
 
                     // Brightness / Exposure
                     GUILayout.BeginHorizontal();
