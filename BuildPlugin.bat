@@ -1,10 +1,10 @@
 @echo off
 chcp 65001 >nul
-title 🔨 BUILD SPECTATOR PLUGIN (v3.1.1)
+title 🔨 BUILD SPECTATOR PLUGIN (v3.1.2)
 cd /d "%~dp0"
 
 echo ==================================================================
-echo   🔨 COMPILARE SPECTATORPLUGIN.DLL (v3.1.1)
+echo   🔨 COMPILARE SPECTATORPLUGIN.DLL (v3.1.2)
 echo ==================================================================
 echo.
 

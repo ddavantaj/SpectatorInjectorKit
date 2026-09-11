@@ -1,5 +1,5 @@
 ================================================================================
-   UNITY SPECTATOR CAMERA & 3D VIRTUAL STUDIO SUITE (v3.1.1)
+   UNITY SPECTATOR CAMERA & 3D VIRTUAL STUDIO SUITE (v3.1.2)
    INSTRUCTION MANUAL / MANUAL DE INSTRUCTIUNI / ИНСТРУКЦИЯ ПО ЭКСПЛУАТАЦИИ
 ================================================================================
 
@@ -22,8 +22,8 @@ LANGUAGES INCLUDED / LIMBI INCLUSE / ВКЛЮЧЕННЫЕ ЯЗЫКИ:
 
 [ 1.2 KEYBOARD SHORTCUTS & CONTROLS ]
 --------------------------------------------------------------------------------
-- F1             : Toggle Spectator UI on / off
-- F9             : Capture Screenshot (Alpha PNG / 8x MSAA)
+- F1             : Toggle Spectator UI on / off (also cancels Clean Capture auto-hide)
+- F9             : Capture Screenshot (Alpha PNG / 8x MSAA) - panel auto-hides if Clean Capture is on
 - F10            : Toggle Screen Recording (Zero-Lag 60 FPS MP4 + In-Game Audio, 1:1 Real-Time)
 - W / A / S / D  : Move Camera Forward / Left / Backward / Right in World Space
 - E / Space      : Fly Upwards in World Space
@@ -31,17 +31,23 @@ LANGUAGES INCLUDED / LIMBI INCLUSE / ВКЛЮЧЕННЫЕ ЯЗЫКИ:
 - Left Shift     : Hold for Fast Speed Boost (Turbo)
 - Right-Click    : Hold & Drag mouse to Look Around / Orbit (Pitch & Yaw)
 
-[ 1.3 CATEGORIZED ACCORDION CONTROL PANEL ]
+[ 1.3 TABBED CONTROL PANEL & CLEAN CAPTURE ]
 --------------------------------------------------------------------------------
-The control panel is organized into 7 collapsible sections with live badges:
-1. 🎥 1. Video Setup & Stabilization : Resolution (1080p/720p/Native), FPS (60/30),
-                                        Hardware NVENC mode, Steadicam Gimbal damping.
-2. 👤 2. VR Tracking & Free-Flight   : Follow VR Headset (1st Person) vs Locked World.
-3. 🎥 3. Camera Position, Rotation & FOV : Axis step buttons (±0.03, ±0.1, ±1), FOV presets.
-4. 💾 4. Camera Presets              : 4 quick save/load slots for camera coordinates only.
-5. 🧱 5. 3D Scene Objects & Cyclorama: Curved Backdrop, 360° Dome, Flat Wall, HDR loader.
-6. 🎨 6. Skybox & Background Fill    : Disable Skybox, Chroma Green/Blue, Alpha PNG cutout.
-7. 💻 7. Proxima Inspector & Cheats  : Interactive terminal & 1-click level/coin controls.
+A status strip (target, tracking mode, resolution, FOV, REC timer) and pinned
+capture buttons sit above 7 tabs, so only one category is drawn at a time:
+1. 🎥 Video      : Resolution (1080p/720p/Native), FPS (60/30),
+                    Hardware NVENC mode, Steadicam Gimbal damping, Clean Capture toggle.
+2. 👤 Tracking   : Follow VR Headset (1st Person) vs Locked World, flight speed, mouse sensitivity.
+3. 🎬 Camera     : Position, Rotation & FOV with self-expanding sliders and axis step buttons.
+4. 💾 Presets    : 4 quick save/load slots for camera coordinates only.
+5. 🧱 3D Scene   : Curved Backdrop, 360° Dome, Flat Wall, HDR loader, world transform.
+6. 🎨 Backdrop   : Disable Skybox, Chroma Green/Blue, Alpha PNG cutout.
+7. 💻 Console    : Interactive terminal & 1-click level/coin controls.
+
+Clean Capture (on by default) hides the whole panel the instant you take a
+screenshot or start recording, and brings it back automatically when the
+capture ends - so it never appears in your screenshots or videos. The window
+is resizable from its corner and remembers position, size and active tab.
 
 [ 1.4 HIGH-PERFORMANCE ZERO-LAG VIDEO & STABILIZATION ]
 --------------------------------------------------------------------------------
@@ -73,17 +79,23 @@ The control panel is organized into 7 collapsible sections with live badges:
 - Shift Stânga   : Viteză mărită de deplasare (Turbo)
 - Click Dreapta  : Țineți apăsat și mișcați mouse-ul pentru rotire privire
 
-[ 2.3 PANOU DE CONTROL STRUCTURAT PE SECȚIUNI ]
+[ 2.3 PANOU DE CONTROL PE TAB-URI & CLEAN CAPTURE ]
 --------------------------------------------------------------------------------
-Panoul conține 7 secțiuni pliabile pentru o utilizare clară și aerisită:
-1. 🎥 1. Video Setup & Stabilization : Rezoluții (1080p, 720p, Native), 60/30 FPS,
-                                        mod Zero-Lag NVENC și stabilizare Steadicam.
-2. 👤 2. VR Tracking & Free-Flight   : Urmărire cască VR (Persoana 1) vs Zbor Liber.
-3. 🎥 3. Camera Position, Rotation & FOV : Poziție fină X/Y/Z, Rotație, Unghi FOV.
-4. 💾 4. Camera Presets              : 4 preseturi independente pentru poziția camerei.
-5. 🧱 5. 3D Scene Objects & Cyclorama: Fundal Curbat 3D, Dom 360°, Încărcare fișiere HDR.
-6. 🎨 6. Skybox & Background Fill    : Oprire Skybox, Fundal Solid Chroma Green/Blue/Alpha.
-7. 💻 7. Proxima Inspector & Cheats  : Consolă comenzi, Setare Nivel, Bani, Vieți, Stele.
+O bară de status (țintă, mod tracking, rezoluție, FOV, timer REC) și butoanele
+de captură stau fixe deasupra a 7 tab-uri, deci se randează doar unul odată:
+1. 🎥 Video      : Rezoluții (1080p, 720p, Native), 60/30 FPS, mod Zero-Lag
+                    NVENC, stabilizare Steadicam și comutatorul Clean Capture.
+2. 👤 Tracking   : Urmărire cască VR (Persoana 1) vs Zbor Liber, viteză, sensibilitate mouse.
+3. 🎬 Camera     : Poziție, Rotație, Unghi FOV cu slider-e care se extind automat.
+4. 💾 Presets    : 4 preseturi independente pentru poziția camerei.
+5. 🧱 3D Scene   : Fundal Curbat 3D, Dom 360°, Perete Plat, Încărcare fișiere HDR.
+6. 🎨 Backdrop   : Oprire Skybox, Fundal Solid Chroma Green/Blue/Alpha.
+7. 💻 Console    : Consolă comenzi, Setare Nivel, Bani, Vieți, Stele.
+
+Clean Capture (activ implicit) ascunde tot panoul instant când faci un
+screenshot sau pornești o înregistrare, și îl aduce automat înapoi la final -
+astfel nu mai apare niciodată în poze sau video. Fereastra se redimensionează
+din colț și reține poziția, dimensiunea și tab-ul activ.
 
 [ 2.4 ÎNREGISTRARE VIDEO ZERO-LAG & STABILIZARE STEADICAM ]
 --------------------------------------------------------------------------------
@@ -114,14 +126,20 @@ Panoul conține 7 secțiuni pliabile pentru o utilizare clară și aerisită:
 - Left Shift     : Ускорение полета (Турбо)
 - Правая кнопка  : Удерживайте для вращения и обзора мышью
 
-[ 3.3 КАТЕГОРИЗИРОВАННАЯ ПАНЕЛЬ УПРАВЛЕНИЯ ]
+[ 3.3 ПАНЕЛЬ УПРАВЛЕНИЯ НА ВКЛАДКАХ & CLEAN CAPTURE ]
 --------------------------------------------------------------------------------
-Панель разделена на 7 аккуратных сворачиваемых блоков:
-1. 🎥 1. Video Setup & Stabilization : Настройки 1080p/720p, 60 FPS, NVENC и Steadicam.
-2. 👤 2. VR Tracking & Free-Flight   : Слежение за VR шлемом (1-е лицо) / Свободный полет.
-3. 🎥 3. Camera Position, Rotation & FOV : Координаты X/Y/Z, Угол обзора FOV.
-4. 💾 4. Camera Presets              : 4 слота быстрых пресетов камеры.
-5. 🧱 5. 3D Scene Objects & Cyclorama: 3D изогнутый фон, купол 360°, загрузка HDR файлов.
-6. 🎨 6. Skybox & Background Fill    : Отключение скайбокса, Хромакей Green/Blue/Alpha.
-7. 💻 7. Proxima Inspector & Cheats  : Консоль читов, Выбор уровня, Монеты, Жизни, Звезды.
+Строка статуса (цель, режим слежения, разрешение, FOV, таймер REC) и кнопки
+захвата закреплены над 7 вкладками, отображается только одна за раз:
+1. 🎥 Video      : Настройки 1080p/720p, 60 FPS, NVENC, Steadicam, переключатель Clean Capture.
+2. 👤 Tracking   : Слежение за VR шлемом (1-е лицо) / Свободный полет, скорость, чувствительность мыши.
+3. 🎬 Camera     : Координаты X/Y/Z, Угол обзора FOV с саморасширяющимися ползунками.
+4. 💾 Presets    : 4 слота быстрых пресетов камеры.
+5. 🧱 3D Scene   : 3D изогнутый фон, купол 360°, плоская стена, загрузка HDR файлов.
+6. 🎨 Backdrop   : Отключение скайбокса, Хромакей Green/Blue/Alpha.
+7. 💻 Console    : Консоль читов, Выбор уровня, Монеты, Жизни, Звезды.
+
+Clean Capture (включен по умолчанию) мгновенно скрывает всю панель при
+скриншоте или начале записи и возвращает её автоматически по завершении -
+поэтому она никогда не попадает в кадр. Окно можно изменять по углу, оно
+запоминает позицию, размер и активную вкладку.
 ================================================================================

@@ -1,6 +1,6 @@
-# 🎥 Unity Spectator Camera & 3D Virtual Studio Suite (v3.1.1)
+# 🎥 Unity Spectator Camera & 3D Virtual Studio Suite (v3.1.2)
 
-[![Release](https://img.shields.io/badge/Release-v3.1.1-brightgreen.svg)](https://github.com/ddavantaj/SpectatorInjectorKit/releases/tag/v3.1.1)
+[![Release](https://img.shields.io/badge/Release-v3.1.2-brightgreen.svg)](https://github.com/ddavantaj/SpectatorInjectorKit/releases/tag/v3.1.2)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Unity%20MR%20%2F%20VR-blue.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)]()
 
@@ -22,7 +22,7 @@ Works as a **1-click standalone injector on any compiled Windows game build** (w
 ## ⚡ Download & Quick Start
 
 ### 📦 1-Click Standalone Injector (No Unity Editor Required)
-1. Download the latest pre-packaged release: **[SpectatorInjectorKit_v3.1.1.zip](https://github.com/ddavantaj/SpectatorInjectorKit/releases/download/v3.1.1/SpectatorInjectorKit_v3.1.1.zip)**.
+1. Download the latest pre-packaged release: **[SpectatorInjectorKit_v3.1.2.zip](https://github.com/ddavantaj/SpectatorInjectorKit/releases/download/v3.1.2/SpectatorInjectorKit_v3.1.2.zip)**.
 2. Extract the ZIP archive anywhere on your PC.
 3. Double-click **`Inject.bat`** (or `InjectSpectatorCamera.exe`).
 4. Select your target game folder when prompted (the folder containing your game `.exe`).
@@ -38,7 +38,7 @@ Works as a **1-click standalone injector on any compiled Windows game build** (w
 
 | Key / Shortcut | Action | Description |
 | :--- | :--- | :--- |
-| **`F1`** | **Toggle UI** | Show / Hide the Spectator Suite on-screen Control Panel. |
+| **`F1`** | **Toggle UI** | Show / Hide the Spectator Suite on-screen Control Panel. Also auto-hides during Screenshot/Recording when Clean Capture is on. |
 | **`F9`** | **Take Screenshot** | Capture ultra-crisp PNG screenshot (8x MSAA & Alpha transparency support). |
 | **`F10`** | **Toggle Recording** | Start / Stop 60 FPS MP4 video recording with **synchronized in-game audio** & **1:1 Real-Time Speed Sync**. |
 | **`W / A / S / D`** | **Move Camera** | Fly Forward, Left, Backward, Right in 3D World Space. *(Auto-locks world position)* |
@@ -49,17 +49,19 @@ Works as a **1-click standalone injector on any compiled Windows game build** (w
 
 ---
 
-## 🌟 Key Features & Capabilities (v3.1.1)
+## 🌟 Key Features & Capabilities (v3.1.2)
 
-### 1. 🗂️ Categorized Accordion Control Panel
-* Clean, categorized layout with 7 collapsible foldout boxes (`[ ▲ Hide / ▼ Open ]`) and live status badges:
-  1. **🎥 1. Video Setup & Stabilization** `[ 1080p @ 60 FPS | 🎬 Steadicam ON | 🔊 Audio ON ]`
-  2. **👤 2. VR Tracking & Free-Flight** `[ Following VR / Locked ]`
-  3. **🎥 3. Camera Position, Rotation & FOV** `[ FOV: 60° ]`
-  4. **💾 4. Camera Presets** `[ 4 Slots Saved/Empty ]`
-  5. **🧱 5. 3D Scene Objects & Cyclorama** `[ Active / None ]`
-  6. **🎨 6. Skybox & Background Fill** `[ Solid Fill / Transparent ]`
-  7. **💻 7. Proxima In-Game Inspector & Cheats** `[ Terminal & Quick Cheats ]`
+### 1. 🗂️ Tabbed Control Panel & Clean Capture
+* Redesigned compact panel: a persistent status strip (target, tracking mode, resolution, FOV, REC timer) and pinned capture buttons sit above a tab bar, so only one category renders at a time:
+  1. **🎥 Video** — Resolution, FPS, hardware encoder, Steadicam damping, audio & Clean Capture toggle.
+  2. **👤 Tracking** — Follow VR Headset vs Locked World, flight speed, mouse sensitivity.
+  3. **🎬 Camera** — Position, Rotation & FOV with self-expanding sliders.
+  4. **💾 Presets** — 4 quick save/load camera slots.
+  5. **🧱 3D Scene** — Curved Backdrop, 360° Dome, Flat Wall, HDR loader, world transform.
+  6. **🎨 Backdrop** — Skybox disable, Chroma Green/Blue, Alpha PNG cutout.
+  7. **💻 Console** — Proxima terminal & 1-click level/coin/lives/stars controls.
+* **🙈 Clean Capture**: when enabled (default), the entire panel hides itself the instant a screenshot is taken or a recording starts, and restores automatically when it stops — so the overlay is never baked into your footage. `F1` always takes priority to bring it back.
+* The window is resizable from its corner and remembers its position, size, active tab, and Clean Capture preference between sessions.
 
 ---
 
