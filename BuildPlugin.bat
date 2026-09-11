@@ -40,6 +40,10 @@ echo     ^<Reference Include="UnityEngine.AudioModule"^>
 echo       ^<HintPath^>C:\Program Files\Unity\Hub\Editor\2022.3.38f1\Editor\Data\Managed\UnityEngine\UnityEngine.AudioModule.dll^</HintPath^>
 echo       ^<Private^>false^</Private^>
 echo     ^</Reference^>
+echo     ^<Reference Include="UnityEngine.TextRenderingModule"^>
+echo       ^<HintPath^>C:\Program Files\Unity\Hub\Editor\2022.3.38f1\Editor\Data\Managed\UnityEngine\UnityEngine.TextRenderingModule.dll^</HintPath^>
+echo       ^<Private^>false^</Private^>
+echo     ^</Reference^>
 echo   ^</ItemGroup^>
 echo ^</Project^>
 ) > "_build\SpectatorPlugin.csproj"
