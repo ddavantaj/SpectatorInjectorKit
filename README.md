@@ -28,9 +28,12 @@ Works as a **1-click standalone injector on any compiled Windows game build** (w
 ### 📦 1-Click Standalone Injector (No Unity Editor Required)
 1. Download the latest pre-packaged release: **[SpectatorInjectorKit_v3.2.0.zip](https://github.com/ddavantaj/SpectatorInjectorKit/releases/download/v3.2.0/SpectatorInjectorKit_v3.2.0.zip)**.
 2. Extract the ZIP archive anywhere on your PC.
-3. Double-click **`Inject.bat`** (or `InjectSpectatorCamera.exe`).
-4. Select your target game folder when prompted (the folder containing your game `.exe`).
-5. Launch the game executable. The Spectator Camera and Control Panel will appear automatically on your screen!
+3. Double-click **`Instaleaza.cmd`** — the graphical installer opens.
+4. Pick your game folder (the one containing the game `.exe`; you can also drag & drop it into the window) and click **Install**.
+5. Optional: click **Install ffmpeg** to enable video recording (F10). **Uninstall** restores the original game files.
+6. Launch the game. The Spectator Camera and Control Panel will appear automatically on your screen!
+
+> Prefer the command line? `Inject.bat` (or `InjectSpectatorCamera.exe "<game folder>"`) still works, and `--uninstall` restores the original files.
 
 ### 🛠️ Unity Project Integration
 * Include `SpectatorCameraController.cs` in your `Assets/Scripts/` folder.
