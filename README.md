@@ -1,6 +1,6 @@
-# 🎥 Unity Spectator Camera & 3D Virtual Studio Suite (v3.2.0)
+# 🎥 Unity Spectator Camera & 3D Virtual Studio Suite (v3.2.1)
 
-[![Release](https://img.shields.io/badge/Release-v3.2.0-brightgreen.svg)](https://github.com/ddavantaj/SpectatorInjectorKit/releases/tag/v3.2.0)
+[![Release](https://img.shields.io/badge/Release-v3.2.1-brightgreen.svg)](https://github.com/ddavantaj/SpectatorInjectorKit/releases/tag/v3.2.1)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Unity%20MR%20%2F%20VR-blue.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)]()
 
@@ -26,7 +26,7 @@ Works as a **1-click standalone injector on any compiled Windows game build** (w
 ## ⚡ Download & Quick Start
 
 ### 📦 1-Click Standalone Injector (No Unity Editor Required)
-1. Download the latest pre-packaged release: **[SpectatorInjectorKit_v3.2.0.zip](https://github.com/ddavantaj/SpectatorInjectorKit/releases/download/v3.2.0/SpectatorInjectorKit_v3.2.0.zip)**.
+1. Download the latest pre-packaged release: **[SpectatorInjectorKit_v3.2.1.zip](https://github.com/ddavantaj/SpectatorInjectorKit/releases/download/v3.2.1/SpectatorInjectorKit_v3.2.1.zip)**.
 2. Extract the ZIP archive anywhere on your PC.
 3. Double-click **`Instaleaza.cmd`** — the graphical installer opens.
 4. Pick your game folder (the one containing the game `.exe`; you can also drag & drop it into the window) and click **Install**.
@@ -56,7 +56,7 @@ Works as a **1-click standalone injector on any compiled Windows game build** (w
 
 ---
 
-## 🌟 Key Features & Capabilities (v3.2.0)
+## 🌟 Key Features & Capabilities (v3.2.1)
 
 ### 1. 🗂️ Tabbed Control Panel & Clean Capture
 * Redesigned compact panel: a persistent status strip (target, tracking mode, resolution, FOV, REC timer) and pinned capture buttons sit above a tab bar, so only one category renders at a time:
