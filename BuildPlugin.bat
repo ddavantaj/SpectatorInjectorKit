@@ -1,63 +1,21 @@
 @echo off
-chcp 65001 >nul
-title 🔨 BUILD SPECTATOR PLUGIN (v3.1.2)
+setlocal
 cd /d "%~dp0"
-
-echo ==================================================================
-echo   🔨 COMPILARE SPECTATORPLUGIN.DLL (v3.1.2)
-echo ==================================================================
-echo.
-
-if not exist "_build" mkdir "_build"
-
-(
-echo ^<Project Sdk="Microsoft.NET.Sdk"^>
-echo   ^<PropertyGroup^>
-echo     ^<TargetFramework^>netstandard2.1^</TargetFramework^>
-echo     ^<AssemblyName^>SpectatorPlugin^</AssemblyName^>
-echo     ^<OutputType^>Library^</OutputType^>
-echo     ^<LangVersion^>9.0^</LangVersion^>
-echo     ^<Nullable^>disable^</Nullable^>
-echo     ^<Optimize^>true^</Optimize^>
-echo   ^</PropertyGroup^>
-echo   ^<ItemGroup^>
-echo     ^<Compile Include="..\SpectatorCameraController.cs" /^>
-echo   ^</ItemGroup^>
-echo   ^<ItemGroup^>
-echo     ^<Reference Include="UnityEngine.CoreModule"^>
-echo       ^<HintPath^>C:\Program Files\Unity\Hub\Editor\2022.3.38f1\Editor\Data\Managed\UnityEngine\UnityEngine.CoreModule.dll^</HintPath^>
-echo       ^<Private^>false^</Private^>
-echo     ^</Reference^>
-echo     ^<Reference Include="UnityEngine.IMGUIModule"^>
-echo       ^<HintPath^>C:\Program Files\Unity\Hub\Editor\2022.3.38f1\Editor\Data\Managed\UnityEngine\UnityEngine.IMGUIModule.dll^</HintPath^>
-echo       ^<Private^>false^</Private^>
-echo     ^</Reference^>
-echo     ^<Reference Include="UnityEngine.InputLegacyModule"^>
-echo       ^<HintPath^>C:\Program Files\Unity\Hub\Editor\2022.3.38f1\Editor\Data\Managed\UnityEngine\UnityEngine.InputLegacyModule.dll^</HintPath^>
-echo       ^<Private^>false^</Private^>
-echo     ^</Reference^>
-echo     ^<Reference Include="UnityEngine.AudioModule"^>
-echo       ^<HintPath^>C:\Program Files\Unity\Hub\Editor\2022.3.38f1\Editor\Data\Managed\UnityEngine\UnityEngine.AudioModule.dll^</HintPath^>
-echo       ^<Private^>false^</Private^>
-echo     ^</Reference^>
-echo     ^<Reference Include="UnityEngine.TextRenderingModule"^>
-echo       ^<HintPath^>C:\Program Files\Unity\Hub\Editor\2022.3.38f1\Editor\Data\Managed\UnityEngine\UnityEngine.TextRenderingModule.dll^</HintPath^>
-echo       ^<Private^>false^</Private^>
-echo     ^</Reference^>
-echo   ^</ItemGroup^>
-echo ^</Project^>
-) > "_build\SpectatorPlugin.csproj"
-
-dotnet build "_build\SpectatorPlugin.csproj" -c Release
-if %ERRORLEVEL% equ 0 (
-    copy /Y "_build\bin\Release\netstandard2.1\SpectatorPlugin.dll" "SpectatorPlugin.dll" >nul
-    rmdir /S /Q "_build" >nul 2>&1
-    echo.
-    echo [SUCCESS] SpectatorPlugin.dll a fost compilat si salvat cu succes!
-) else (
-    echo.
-    echo [ERROR] Compilarea a esuat! Verificati erorile de mai sus.
+set "GAME_MANAGED=D:\_AI\m3-ar_Build-win-26-11-12\m3-ar_Build-win\Match3MR_Data\Managed"
+if not "%~1"=="" set "GAME_MANAGED=%~1"
+if not exist "%GAME_MANAGED%\UnityEngine.CoreModule.dll" (
+  echo Nu gasesc bibliotecile Unity in: %GAME_MANAGED%
+  echo Folosire: BuildPlugin.bat "calea catre folderul Managed al jocului"
+  pause
+  exit /b 1
 )
-
-echo.
+dotnet build SpectatorPlugin.csproj -c Release "-p:GameManaged=%GAME_MANAGED%"
+if errorlevel 1 (
+  echo Compilarea a esuat.
+  pause
+  exit /b 1
+)
+copy /Y "bin\Release\netstandard2.1\SpectatorPlugin.dll" "SpectatorPlugin.dll" >nul
+if errorlevel 1 exit /b 1
+echo Plugin compilat. Reinstaleaza-l cu Inject.bat dupa inchiderea jocului.
 pause

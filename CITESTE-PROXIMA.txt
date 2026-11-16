@@ -1,0 +1,11 @@
+﻿Spectator Suite pentru Match3MR
+
+F1 afiseaza sau ascunde panoul din joc. Deschide fila Console pentru comenzile Proxima.
+Comenzile sunt citite din joc si grupate pe categorii. Foloseste Cauta sau alege o categorie,
+selecteaza o comanda, completeaza parametrii si apasa Ruleaza comanda. Refresh reciteste lista.
+Rezultatele apar in Jurnal. Lista se schimba dupa scena si comenzile disponibile in joc.
+
+Pluginul adaptat este SpectatorPlugin.dll. Inject.bat il instaleaza; injectorul pastreaza
+un backup Assembly-CSharp.dll.bak si poate fi rulat cu --uninstall pentru restaurare.
+BuildPlugin.bat recompila pluginul adaptat pentru acest joc; optional accepta calea catre
+folderul Managed al unui alt build Unity Mono. Kitul contine ffmpeg pentru capturi video.

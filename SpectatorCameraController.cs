@@ -25,7 +25,7 @@ namespace SpectatorTools
         }
     }
 
-    public class SpectatorCameraController : MonoBehaviour
+    public partial class SpectatorCameraController : MonoBehaviour
     {
         public const string VERSION = "v3.1.2";
         public static SpectatorCameraController Instance { get; private set; }
@@ -128,7 +128,7 @@ namespace SpectatorTools
         private string inputStarsStr = "999";
 
         // Screen Capture & High-Performance Zero-Lag Recording State
-        public enum VideoResMode { FullHD_1080p, HD_720p, NativeDisplay }
+        public enum VideoResMode { FullHD_1080p, HD_720p, NativeDisplay, QHD_1440p, UHD_2160p }
         public enum VideoQualityMode { UltraFast_ZeroLag, Balanced, HighQuality }
 
         private bool isRecording = false;
@@ -216,6 +216,7 @@ namespace SpectatorTools
 
         private void Start()
         {
+            StartWebPanel();
             FindTargetCamera();
             EnsureAudioListenerHook();
             StartCoroutine(CaptureRecordCoroutine());
@@ -223,6 +224,8 @@ namespace SpectatorTools
 
         private void Update()
         {
+            PumpWebPanel();
+            UpdateCommandCatalog();
             // Toggle UI on/off with F1. A manual toggle always wins over the recorder's
             // auto-hide, so stopping a recording won't pop the window back open.
             if (Input.GetKeyDown(KeyCode.F1))
@@ -346,6 +349,7 @@ namespace SpectatorTools
 
         private void OnDestroy()
         {
+            StopWebPanel();
             SaveAllPersistentSettings();
             if (isRecording)
             {
@@ -473,6 +477,8 @@ namespace SpectatorTools
 
             if (targetCamera != null)
             {
+                // The boss is on layer 19; retain the game's existing visibility for every other layer.
+                targetCamera.cullingMask |= 1 << 19;
                 targetCamera.fieldOfView = fov;
                 targetCamera.farClipPlane = Mathf.Max(targetCamera.farClipPlane, 2000f);
 
@@ -519,6 +525,8 @@ namespace SpectatorTools
                     if (!isSettingsLoaded) bgColor = targetCamera.backgroundColor;
                     if (!isSettingsLoaded) fov = targetCamera.fieldOfView;
                     targetCamera.farClipPlane = Mathf.Max(targetCamera.farClipPlane, 2000f);
+                    targetCamera.cullingMask |= 1 << 19;
+                    Debug.Log("[SpectatorCameraController] Layer 19 enabled; camera mask: " + targetCamera.cullingMask);
                 }
 
                 // Disable competing spectator scripts on this GameObject
@@ -1144,6 +1152,7 @@ namespace SpectatorTools
                 loadedShapeFilePath = filePath;
                 loadedShapeFileName = Path.GetFileName(filePath);
                 show3DShape = true;
+                RememberRecentImage(filePath);
 
                 terminalLog += $"\n[3D OBJECT] Loaded 3D Shape: {loadedShapeFileName} ({loadedShapeTexture.width}x{loadedShapeTexture.height}) -> {currentShape}";
                 ShowNotice($"🌌 Obiect 3D Încărcat în Scenă: {loadedShapeFileName}");
@@ -1772,6 +1781,14 @@ namespace SpectatorTools
                 {
                     vf = "vflip,scale=1280:720:flags=fast_bilinear";
                 }
+                else if (videoResMode == VideoResMode.QHD_1440p)
+                {
+                    vf = "vflip,scale=2560:1440:force_original_aspect_ratio=decrease:force_divisible_by=2:flags=lanczos,pad=2560:1440:(ow-iw)/2:(oh-ih)/2";
+                }
+                else if (videoResMode == VideoResMode.UHD_2160p)
+                {
+                    vf = "vflip,scale=3840:2160:force_original_aspect_ratio=decrease:force_divisible_by=2:flags=lanczos,pad=3840:2160:(ow-iw)/2:(oh-ih)/2";
+                }
 
                 // Select encoder tuning for zero latency & maximum speed
                 string nvencPreset = "p1";
@@ -1802,7 +1819,7 @@ namespace SpectatorTools
                 }
 
                 // Hardware NVENC uses -tune ull, CPU libx264 uses -tune zerolatency
-                string args = $"-y -f rawvideo -vcodec rawvideo -s {recordWidth}x{recordHeight} -pix_fmt rgb24 -r {targetRecordFPS} -i - -vf \"{vf}\" -c:v h264_nvenc -preset {nvencPreset} -tune ull -cq {nvencCQ} -pix_fmt yuv420p -movflags +faststart \"{tempVideoPath}\"";
+                string args = $"-hide_banner -loglevel error -y -f rawvideo -vcodec rawvideo -s {recordWidth}x{recordHeight} -pix_fmt rgb24 -r {targetRecordFPS} -i - -vf \"{vf}\" -c:v h264_nvenc -preset {nvencPreset} -tune ull -cq {nvencCQ} -pix_fmt yuv420p -movflags +faststart \"{tempVideoPath}\"";
 
                 ProcessStartInfo psi = new ProcessStartInfo
                 {
@@ -1826,7 +1843,7 @@ namespace SpectatorTools
                 catch
                 {
                     // Fallback to CPU libx264 ultrafast if NVENC not initialized
-                    args = $"-y -f rawvideo -vcodec rawvideo -s {recordWidth}x{recordHeight} -pix_fmt rgb24 -r {targetRecordFPS} -i - -vf \"{vf}\" -c:v libx264 -preset {x264Preset} -tune zerolatency -crf {x264CRF} -pix_fmt yuv420p -movflags +faststart \"{tempVideoPath}\"";
+                    args = $"-hide_banner -loglevel error -y -f rawvideo -vcodec rawvideo -s {recordWidth}x{recordHeight} -pix_fmt rgb24 -r {targetRecordFPS} -i - -vf \"{vf}\" -c:v libx264 -preset {x264Preset} -tune zerolatency -crf {x264CRF} -pix_fmt yuv420p -movflags +faststart \"{tempVideoPath}\"";
                     psi.Arguments = args;
                     ffmpegProcess = Process.Start(psi);
                 }
@@ -1836,6 +1853,10 @@ namespace SpectatorTools
                     terminalLog += "\n[REC ERROR] Could not start FFmpeg process.";
                     return;
                 }
+
+                // Drain stderr while encoding: a full redirected pipe would stall the recording.
+                ffmpegProcess.ErrorDataReceived += (_, e) => { string line = e.Data; if (!string.IsNullOrEmpty(line)) MainThreadDispatcher.Enqueue(() => Debug.LogWarning("[Spectator FFmpeg] " + line)); };
+                ffmpegProcess.BeginErrorReadLine();
 
                 ffmpegStdin = ffmpegProcess.StandardInput.BaseStream;
 
@@ -1962,7 +1983,7 @@ namespace SpectatorTools
                     uiHiddenByRecorder = true;
                 }
 
-                string modeLabel = videoResMode == VideoResMode.FullHD_1080p ? "1080p" : (videoResMode == VideoResMode.HD_720p ? "720p" : "Native");
+                string modeLabel = ResolutionLabel();
                 string audioLabel = recordAudio ? " + Audio" : "";
                 terminalLog += $"\n[REC] Started Full-Frame Recording ({modeLabel} @ {targetRecordFPS} FPS{audioLabel}): {finalFileName}";
                 ShowNotice($"🔴 Înregistrare MP4: {modeLabel} ({targetRecordFPS} FPS{audioLabel})");
@@ -2336,8 +2357,6 @@ namespace SpectatorTools
                 GUILayout.Label("<color=#FFCC55>⏳ Searching for the spectator camera in the scene...</color>", stHint);
                 GUILayout.Space(4);
                 if (GUILayout.Button("🔄 Re-bind Camera Now", GUILayout.Height(24))) FindTargetCamera();
-                GUILayout.EndVertical();
-                return;
             }
 
             GUILayout.Space(5);
@@ -2369,7 +2388,7 @@ namespace SpectatorTools
                           : "<color=#FF8A8A>●</color> <b>searching...</b>";
 
             string trackMode = lockWorldPosition ? "🔒 World" : "👤 VR";
-            string resLabel = videoResMode == VideoResMode.FullHD_1080p ? "1080p" : (videoResMode == VideoResMode.HD_720p ? "720p" : "Native");
+            string resLabel = ResolutionLabel();
 
             GUILayout.BeginHorizontal();
             GUILayout.Label($"{target}  <color=#667788>|</color>  {trackMode}  <color=#667788>|</color>  {resLabel}@{targetRecordFPS}  <color=#667788>|</color>  FOV {fov:F0}°", stStatus, GUILayout.ExpandWidth(true));
@@ -2533,7 +2552,7 @@ namespace SpectatorTools
 
         private void DrawTabVideo()
         {
-            string resLabel = videoResMode == VideoResMode.FullHD_1080p ? "1080p" : (videoResMode == VideoResMode.HD_720p ? "720p" : "Native");
+            string resLabel = ResolutionLabel();
             string qualLabel = videoQuality == VideoQualityMode.UltraFast_ZeroLag ? "⚡ Zero-Lag" : (videoQuality == VideoQualityMode.Balanced ? "⚖️ Balanced" : "💎 Quality");
 
             GUILayout.BeginVertical("box");
@@ -2544,6 +2563,10 @@ namespace SpectatorTools
             if (GUILayout.Toggle(videoResMode == VideoResMode.FullHD_1080p, " 1080p")) videoResMode = VideoResMode.FullHD_1080p;
             if (GUILayout.Toggle(videoResMode == VideoResMode.HD_720p, " 720p")) videoResMode = VideoResMode.HD_720p;
             if (GUILayout.Toggle(videoResMode == VideoResMode.NativeDisplay, " Native")) videoResMode = VideoResMode.NativeDisplay;
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Toggle(videoResMode == VideoResMode.QHD_1440p, " 2K (1440p)")) videoResMode = VideoResMode.QHD_1440p;
+            if (GUILayout.Toggle(videoResMode == VideoResMode.UHD_2160p, " 4K (2160p)")) videoResMode = VideoResMode.UHD_2160p;
             GUILayout.EndHorizontal();
 
             DrawSubHead("Frame Rate");
@@ -2990,84 +3013,6 @@ namespace SpectatorTools
         // ==========================================
         // 💻 TAB: PROXIMA CONSOLE
         // ==========================================
-
-        private void DrawTabConsole()
-        {
-            GUILayout.BeginVertical("box");
-            DrawSectionTitle("💻 Command Terminal", null);
-            GUILayout.BeginHorizontal();
-            terminalInput = GUILayout.TextField(terminalInput, GUILayout.ExpandWidth(true));
-            if (GUILayout.Button("Run", GUILayout.Width(60)))
-            {
-                ExecuteCustomCommand(terminalInput);
-                terminalInput = "";
-            }
-            GUILayout.EndHorizontal();
-            GUILayout.EndVertical();
-
-            GUILayout.Space(4);
-            GUILayout.BeginVertical("box");
-            DrawSectionTitle("🎮 Quick Game Actions", null);
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Level", stStatus, GUILayout.Width(42));
-            inputLevelStr = GUILayout.TextField(inputLevelStr, GUILayout.Width(45));
-            if (GUILayout.Button("Set", GUILayout.Width(48)))
-            {
-                if (int.TryParse(inputLevelStr, out int lvl)) CallProximaMethod("SetLevel", lvl);
-            }
-            if (GUILayout.Button("Load Level")) CallProximaMethod("LoadLevel");
-            if (GUILayout.Button("Load Menu")) CallProximaMethod("LoadMenu");
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Coins", stStatus, GUILayout.Width(42));
-            inputCoinsStr = GUILayout.TextField(inputCoinsStr, GUILayout.Width(60));
-            if (GUILayout.Button("Set Coins", GUILayout.ExpandWidth(true)))
-            {
-                if (int.TryParse(inputCoinsStr, out int coins)) CallProximaMethod("SetCoins", coins);
-            }
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Lives", stStatus, GUILayout.Width(42));
-            inputLivesStr = GUILayout.TextField(inputLivesStr, GUILayout.Width(60));
-            if (GUILayout.Button("Set Lives", GUILayout.ExpandWidth(true)))
-            {
-                if (int.TryParse(inputLivesStr, out int lives)) CallProximaMethod("SetLives", lives);
-            }
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Stars", stStatus, GUILayout.Width(42));
-            inputStarsStr = GUILayout.TextField(inputStarsStr, GUILayout.Width(60));
-            if (GUILayout.Button("Set Stars", GUILayout.ExpandWidth(true)))
-            {
-                if (int.TryParse(inputStarsStr, out int stars)) CallProximaMethod("SetStars", stars);
-            }
-            GUILayout.EndHorizontal();
-
-            GUILayout.Space(3);
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("🏆 Win Level")) CallProximaMethod("WinLevel");
-            if (GUILayout.Button("💀 Lose Level")) CallProximaMethod("LoseLevel");
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("🔄 Recenter")) CallProximaMethod("RecenterArea");
-            if (GUILayout.Button("🧹 Reset Tutorials")) CallProximaMethod("ResetTutorials");
-            if (GUILayout.Button("Clear Save")) CallProximaMethod("ClearSave");
-            GUILayout.EndHorizontal();
-            GUILayout.EndVertical();
-
-            GUILayout.Space(4);
-            GUILayout.BeginVertical("box");
-            DrawSectionTitle("📜 Log", null);
-            logScrollPos = GUILayout.BeginScrollView(logScrollPos, GUILayout.Height(130));
-            GUILayout.TextArea(terminalLog, GUILayout.ExpandHeight(true));
-            GUILayout.EndScrollView();
-            GUILayout.EndVertical();
-        }
 
         private void SaveCameraPresetIndex(int pIndex)
         {

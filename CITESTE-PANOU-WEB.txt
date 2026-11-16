@@ -1,0 +1,9 @@
+﻿Panou web Spectator Studio
+
+1. Porneste Match3MR.exe si asteapta sa se incarce jocul.
+2. Deschide Panou Web.cmd sau adresa http://127.0.0.1:47830/ in browser, pe acest PC.
+3. Panoul ofera camera, capturi, scena 3D, fundal si comenzile Proxima ale jocului.
+4. Selectorul de imagine din Scena 3D deschide o fereastra Windows pe PC.
+5. Cand jocul este inchis, panoul devine indisponibil; porneste-l din nou si reincarca pagina.
+
+Serverul asculta numai pe 127.0.0.1, nu pe reteaua locala. Sursa si pagina sunt incluse in kit.
