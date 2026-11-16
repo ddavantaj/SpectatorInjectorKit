@@ -17,6 +17,10 @@ Works as a **1-click standalone injector on any compiled Windows game build** (w
   <img src="docs/images/screenshot_spectator_controls.png" alt="Spectator Camera & Control Panel Suite" width="49%" />
 </p>
 
+<p align="center">
+  <img src="docs/images/screenshot_web_panel.png" alt="Spectator Studio Web Panel" width="98%" />
+</p>
+
 ---
 
 ## ⚡ Download & Quick Start
